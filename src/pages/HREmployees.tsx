@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Search, Plus } from 'lucide-react';
+import { Mail, Search, Plus, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EmailComposerModal } from '@/components/EmailComposerModal';
 
@@ -130,10 +130,16 @@ export default function HREmployees() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Employee Management</h1>
-        <Button onClick={() => navigate('/hr/employees/new')}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Employee
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => navigate('/hr/employees/new')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Employee
+          </Button>
+          <Button onClick={() => navigate('/hr/employees/import')} variant="outline">
+            <Upload className="w-4 h-4 mr-2" />
+            Import CSV
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-6">

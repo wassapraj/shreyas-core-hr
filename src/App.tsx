@@ -15,6 +15,7 @@ import CandidateOfferView from "./pages/CandidateOfferView";
 import EmployeeProfile from "./pages/EmployeeProfile";
 import HREmployees from "./pages/HREmployees";
 import EmployeeProfileManagement from "./pages/EmployeeProfileManagement";
+import EmployeesImport from "./pages/EmployeesImport";
 import EmployeeLeave from "./pages/EmployeeLeave";
 import HRLeaves from "./pages/HRLeaves";
 import HRAttendance from "./pages/HRAttendance";
@@ -68,6 +69,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="hr">
                   <Layout><EmployeeProfileManagement /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/employees/import" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><EmployeesImport /></Layout>
                 </ProtectedRoute>
               } 
             />
