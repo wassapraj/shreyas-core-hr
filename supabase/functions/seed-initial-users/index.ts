@@ -48,18 +48,40 @@ Deno.serve(async (req) => {
       }
     ]
 
+    // Helper function to find user by email using listUsers pagination
+    const findUserByEmail = async (email: string) => {
+      let page = 1
+      const perPage = 1000
+      
+      while (true) {
+        const { data: usersPage } = await supabaseAdmin.auth.admin.listUsers({
+          page,
+          perPage
+        })
+        
+        const user = usersPage.users.find(u => u.email === email)
+        if (user) return user
+        
+        // If we got fewer users than requested, we've reached the end
+        if (usersPage.users.length < perPage) break
+        page++
+      }
+      
+      return null
+    }
+
     for (const userData of usersToCreate) {
       try {
         console.log(`Creating user: ${userData.email}`)
 
         // Check if user already exists
-        const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(userData.email)
+        const existingUser = await findUserByEmail(userData.email)
         
         let userId = null
         
-        if (existingUser.user) {
+        if (existingUser) {
           console.log(`User ${userData.email} already exists, updating password`)
-          userId = existingUser.user.id
+          userId = existingUser.id
           
           // Update the password for existing user
           const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(

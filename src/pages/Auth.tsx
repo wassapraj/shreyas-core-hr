@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { cleanupAuthState } from '@/lib/auth-cleanup';
+import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const { user, signIn, signUp } = useAuth();
@@ -30,6 +32,16 @@ const Auth = () => {
     setIsLoading(true);
     
     try {
+      // Clean up existing state
+      cleanupAuthState();
+      
+      // Attempt global sign out
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+      
       const { error } = await signIn(formData.email, formData.password);
       
       if (error) {
@@ -43,6 +55,8 @@ const Auth = () => {
           title: 'Welcome back!',
           description: 'You have been signed in successfully.',
         });
+        // Force page reload for clean state
+        window.location.href = '/';
       }
     } catch (error) {
       toast({
@@ -60,6 +74,9 @@ const Auth = () => {
     setIsLoading(true);
     
     try {
+      // Clean up existing state before sign up
+      cleanupAuthState();
+      
       const { error } = await signUp(formData.email, formData.password);
       
       if (error) {
