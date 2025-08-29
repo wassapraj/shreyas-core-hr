@@ -102,8 +102,7 @@ const EmployeeProfileDetail = () => {
   return (
     <div className="space-y-6">
       <EmployeeSnapshotHeader 
-        employee={employee} 
-        isHR={isHR}
+        employeeId={employee.id}
       />
       
       <EmployeeProfileTabs
