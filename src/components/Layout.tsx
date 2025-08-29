@@ -11,7 +11,8 @@ import {
   Bell, 
   Home,
   LogOut,
-  User
+  User,
+  FileText
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -35,6 +36,7 @@ const Layout = ({ children }: LayoutProps) => {
       { name: 'Attendance', href: '/hr/attendance', icon: Clock },
       { name: 'Leaves', href: '/hr/leaves', icon: Calendar },
       { name: 'Payroll', href: '/hr/payroll', icon: DollarSign },
+      { name: 'Offers', href: '/hr/offers', icon: FileText },
       { name: 'Assets', href: '/hr/assets', icon: Package },
       { name: 'Announcements', href: '/hr/announcements', icon: Bell },
     ] : []),

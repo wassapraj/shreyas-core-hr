@@ -365,6 +365,69 @@ export type Database = {
           },
         ]
       }
+      offers: {
+        Row: {
+          attachments: string[] | null
+          candidate_email: string
+          candidate_name: string
+          candidate_phone: string | null
+          created_at: string | null
+          ctc: string | null
+          dept: string | null
+          id: string
+          job_title: string
+          joining_date: string | null
+          location: string | null
+          offer_html: string | null
+          public_token: string | null
+          recruiter_user_id: string | null
+          remarks: string | null
+          signed_at: string | null
+          status: Database["public"]["Enums"]["offer_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          attachments?: string[] | null
+          candidate_email: string
+          candidate_name: string
+          candidate_phone?: string | null
+          created_at?: string | null
+          ctc?: string | null
+          dept?: string | null
+          id?: string
+          job_title: string
+          joining_date?: string | null
+          location?: string | null
+          offer_html?: string | null
+          public_token?: string | null
+          recruiter_user_id?: string | null
+          remarks?: string | null
+          signed_at?: string | null
+          status?: Database["public"]["Enums"]["offer_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          attachments?: string[] | null
+          candidate_email?: string
+          candidate_name?: string
+          candidate_phone?: string | null
+          created_at?: string | null
+          ctc?: string | null
+          dept?: string | null
+          id?: string
+          job_title?: string
+          joining_date?: string | null
+          location?: string | null
+          offer_html?: string | null
+          public_token?: string | null
+          recruiter_user_id?: string | null
+          remarks?: string | null
+          signed_at?: string | null
+          status?: Database["public"]["Enums"]["offer_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       payroll_items: {
         Row: {
           breakup_json: Json | null
@@ -591,6 +654,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_secure_token: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_role_priority: {
         Args: { _user_id: string }
         Returns: number
@@ -619,6 +686,7 @@ export type Database = {
       employee_status: "Active" | "Inactive"
       leave_status: "Pending" | "Approved" | "Rejected"
       leave_type: "SL" | "CL" | "EL" | "LOP"
+      offer_status: "Draft" | "Sent" | "Accepted" | "Declined" | "Withdrawn"
       payroll_status: "Draft" | "Computed" | "Approved" | "Locked"
       pt_state: "TS" | "AP"
       reminder_channel: "Email" | "WhatsApp" | "Both"
@@ -758,6 +826,7 @@ export const Constants = {
       employee_status: ["Active", "Inactive"],
       leave_status: ["Pending", "Approved", "Rejected"],
       leave_type: ["SL", "CL", "EL", "LOP"],
+      offer_status: ["Draft", "Sent", "Accepted", "Declined", "Withdrawn"],
       payroll_status: ["Draft", "Computed", "Approved", "Locked"],
       pt_state: ["TS", "AP"],
       reminder_channel: ["Email", "WhatsApp", "Both"],

@@ -10,7 +10,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AdminSetup from "./pages/AdminSetup";
 import HRDashboard from "./pages/HRDashboard";
+import HROffers from "./pages/HROffers";
 import EmployeeProfile from "./pages/EmployeeProfile";
+import CandidateOfferView from "./pages/CandidateOfferView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,11 +28,20 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin-setup" element={<AdminSetup />} />
+            <Route path="/offer/:token" element={<CandidateOfferView />} />
             <Route 
               path="/hr" 
               element={
                 <ProtectedRoute requiredRole="hr">
                   <Layout><HRDashboard /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/offers" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><HROffers /></Layout>
                 </ProtectedRoute>
               } 
             />

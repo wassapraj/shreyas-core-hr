@@ -8,3 +8,18 @@ verify_jwt = true
 
 [functions.payroll-compute]
 verify_jwt = true
+
+[functions.offer-generate-html]
+verify_jwt = true
+
+[functions.offer-issue]
+verify_jwt = true
+
+[functions.offer-accept]
+verify_jwt = false
+
+[functions.offer-decline]
+verify_jwt = false
+
+[functions.convert-to-employee]
+verify_jwt = true
