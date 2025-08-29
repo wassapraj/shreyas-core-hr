@@ -49,6 +49,14 @@ function App() {
             
             <Route path="/" element={<Index />} />
             
+            <Route path="/me/profile" element={
+              <ProtectedRoute>
+                <Layout>
+                  <EmployeeProfile />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            
             <Route path="/me" element={
               <ProtectedRoute>
                 <Layout>

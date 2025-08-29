@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, useSearchParams, Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +9,7 @@ import EmployeeProfileTabs from '@/components/EmployeeProfileTabs';
 
 const EmployeeProfileDetail = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const [employee, setEmployee] = useState<any>(null);
@@ -18,11 +19,11 @@ const EmployeeProfileDetail = () => {
   useEffect(() => {
     if (user) {
       fetchUserRoles();
-      if (id) {
+      if (id || searchParams.get('code')) {
         fetchEmployee();
       }
     }
-  }, [user, id]);
+  }, [user, id, searchParams]);
 
   const fetchUserRoles = async () => {
     try {
@@ -40,11 +41,19 @@ const EmployeeProfileDetail = () => {
   const fetchEmployee = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('id', id)
-        .single();
+      let query = supabase.from('employees').select('*');
+      
+      // Support routing by emp_code via query parameter
+      const empCode = searchParams.get('code');
+      if (empCode) {
+        query = query.eq('emp_code', empCode);
+      } else if (id) {
+        query = query.eq('id', id);
+      } else {
+        throw new Error('No employee identifier provided');
+      }
+
+      const { data, error } = await query.single();
 
       if (error) throw error;
 
@@ -89,9 +98,15 @@ const EmployeeProfileDetail = () => {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold mb-2">Employee Not Found</h2>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mb-4">
           The employee profile you're looking for doesn't exist or you don't have permission to view it.
         </p>
+        <button 
+          onClick={() => window.history.back()} 
+          className="text-primary hover:underline"
+        >
+          ← Back to previous page
+        </button>
       </div>
     );
   }
