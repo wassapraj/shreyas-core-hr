@@ -14,16 +14,608 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      announcements: {
+        Row: {
+          audience: string | null
+          created_at: string | null
+          id: string
+          message: string | null
+          posted_on: string | null
+          read_count: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          audience?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          posted_on?: string | null
+          read_count?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          audience?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          posted_on?: string | null
+          read_count?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      asset_assignments: {
+        Row: {
+          asset_id: string | null
+          assigned_on: string | null
+          condition: string | null
+          created_at: string | null
+          employee_id: string | null
+          id: string
+          notes: string | null
+          returned_on: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          asset_id?: string | null
+          assigned_on?: string | null
+          condition?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          id?: string
+          notes?: string | null
+          returned_on?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          asset_id?: string | null
+          assigned_on?: string | null
+          condition?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          id?: string
+          notes?: string | null
+          returned_on?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_assignments_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          asset_code: string
+          created_at: string | null
+          id: string
+          model: string | null
+          purchase_date: string | null
+          serial: string | null
+          status: Database["public"]["Enums"]["asset_status"] | null
+          type: string | null
+          updated_at: string | null
+          warranty_till: string | null
+        }
+        Insert: {
+          asset_code: string
+          created_at?: string | null
+          id?: string
+          model?: string | null
+          purchase_date?: string | null
+          serial?: string | null
+          status?: Database["public"]["Enums"]["asset_status"] | null
+          type?: string | null
+          updated_at?: string | null
+          warranty_till?: string | null
+        }
+        Update: {
+          asset_code?: string
+          created_at?: string | null
+          id?: string
+          model?: string | null
+          purchase_date?: string | null
+          serial?: string | null
+          status?: Database["public"]["Enums"]["asset_status"] | null
+          type?: string | null
+          updated_at?: string | null
+          warranty_till?: string | null
+        }
+        Relationships: []
+      }
+      attendance_status: {
+        Row: {
+          created_at: string | null
+          date: string
+          employee_id: string
+          id: string
+          remarks: string | null
+          source: Database["public"]["Enums"]["attendance_source"] | null
+          status: Database["public"]["Enums"]["attendance_status_enum"]
+          updated_at: string | null
+          work_hours: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          employee_id: string
+          id?: string
+          remarks?: string | null
+          source?: Database["public"]["Enums"]["attendance_source"] | null
+          status: Database["public"]["Enums"]["attendance_status_enum"]
+          updated_at?: string | null
+          work_hours?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          employee_id?: string
+          id?: string
+          remarks?: string | null
+          source?: Database["public"]["Enums"]["attendance_source"] | null
+          status?: Database["public"]["Enums"]["attendance_status_enum"]
+          updated_at?: string | null
+          work_hours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_status_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_upload: {
+        Row: {
+          created_at: string | null
+          date: string
+          device_id: string | null
+          emp_code: string
+          first_swipe: string | null
+          id: string
+          last_swipe: string | null
+          location: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          device_id?: string | null
+          emp_code: string
+          first_swipe?: string | null
+          id?: string
+          last_swipe?: string | null
+          location?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          device_id?: string | null
+          emp_code?: string
+          first_swipe?: string | null
+          id?: string
+          last_swipe?: string | null
+          location?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      employees: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          designation: string | null
+          dob: string | null
+          doj: string | null
+          email: string
+          emp_code: string
+          first_name: string
+          hike_cycle_months: number | null
+          id: string
+          last_hike_amount: number | null
+          last_hike_on: string | null
+          last_hike_pct: number | null
+          last_name: string | null
+          location: string | null
+          manager_employee_id: string | null
+          monthly_ctc: number | null
+          pf_applicable: boolean | null
+          phone: string | null
+          pt_state: Database["public"]["Enums"]["pt_state"] | null
+          status: Database["public"]["Enums"]["employee_status"] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          designation?: string | null
+          dob?: string | null
+          doj?: string | null
+          email: string
+          emp_code: string
+          first_name: string
+          hike_cycle_months?: number | null
+          id?: string
+          last_hike_amount?: number | null
+          last_hike_on?: string | null
+          last_hike_pct?: number | null
+          last_name?: string | null
+          location?: string | null
+          manager_employee_id?: string | null
+          monthly_ctc?: number | null
+          pf_applicable?: boolean | null
+          phone?: string | null
+          pt_state?: Database["public"]["Enums"]["pt_state"] | null
+          status?: Database["public"]["Enums"]["employee_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          designation?: string | null
+          dob?: string | null
+          doj?: string | null
+          email?: string
+          emp_code?: string
+          first_name?: string
+          hike_cycle_months?: number | null
+          id?: string
+          last_hike_amount?: number | null
+          last_hike_on?: string | null
+          last_hike_pct?: number | null
+          last_name?: string | null
+          location?: string | null
+          manager_employee_id?: string | null
+          monthly_ctc?: number | null
+          pf_applicable?: boolean | null
+          phone?: string | null
+          pt_state?: Database["public"]["Enums"]["pt_state"] | null
+          status?: Database["public"]["Enums"]["employee_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_manager_employee_id_fkey"
+            columns: ["manager_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_requests: {
+        Row: {
+          approver_user_id: string | null
+          attachment_url: string | null
+          created_at: string | null
+          created_on: string | null
+          days: number | null
+          employee_id: string
+          end_date: string | null
+          id: string
+          priority_score: number | null
+          raw_text: string | null
+          reason: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["leave_status"] | null
+          type: Database["public"]["Enums"]["leave_type"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          approver_user_id?: string | null
+          attachment_url?: string | null
+          created_at?: string | null
+          created_on?: string | null
+          days?: number | null
+          employee_id: string
+          end_date?: string | null
+          id?: string
+          priority_score?: number | null
+          raw_text?: string | null
+          reason?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["leave_status"] | null
+          type?: Database["public"]["Enums"]["leave_type"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          approver_user_id?: string | null
+          attachment_url?: string | null
+          created_at?: string | null
+          created_on?: string | null
+          days?: number | null
+          employee_id?: string
+          end_date?: string | null
+          id?: string
+          priority_score?: number | null
+          raw_text?: string | null
+          reason?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["leave_status"] | null
+          type?: Database["public"]["Enums"]["leave_type"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_items: {
+        Row: {
+          breakup_json: Json | null
+          created_at: string | null
+          deductions: number | null
+          employee_id: string
+          evidence_url: string | null
+          gross: number | null
+          id: string
+          lop_days: number | null
+          net: number | null
+          paid: boolean | null
+          paid_at: string | null
+          payslip_url: string | null
+          remarks: string | null
+          run_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          breakup_json?: Json | null
+          created_at?: string | null
+          deductions?: number | null
+          employee_id: string
+          evidence_url?: string | null
+          gross?: number | null
+          id?: string
+          lop_days?: number | null
+          net?: number | null
+          paid?: boolean | null
+          paid_at?: string | null
+          payslip_url?: string | null
+          remarks?: string | null
+          run_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          breakup_json?: Json | null
+          created_at?: string | null
+          deductions?: number | null
+          employee_id?: string
+          evidence_url?: string | null
+          gross?: number | null
+          id?: string
+          lop_days?: number | null
+          net?: number | null
+          paid?: boolean | null
+          paid_at?: string | null
+          payslip_url?: string | null
+          remarks?: string | null
+          run_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_items_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_items_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_runs"
+            referencedColumns: ["run_id"]
+          },
+        ]
+      }
+      payroll_runs: {
+        Row: {
+          created_at: string | null
+          created_on: string | null
+          id: string
+          month: number | null
+          notes: string | null
+          run_id: string
+          status: Database["public"]["Enums"]["payroll_status"] | null
+          updated_at: string | null
+          year: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_on?: string | null
+          id?: string
+          month?: number | null
+          notes?: string | null
+          run_id: string
+          status?: Database["public"]["Enums"]["payroll_status"] | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_on?: string | null
+          id?: string
+          month?: number | null
+          notes?: string | null
+          run_id?: string
+          status?: Database["public"]["Enums"]["payroll_status"] | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
+      reminders: {
+        Row: {
+          channel: Database["public"]["Enums"]["reminder_channel"] | null
+          created_at: string | null
+          done_on: string | null
+          due_date: string | null
+          due_time: string | null
+          employee_id: string | null
+          evidence_url: string | null
+          id: string
+          status: Database["public"]["Enums"]["reminder_status"] | null
+          template: string | null
+          title: string | null
+          type: Database["public"]["Enums"]["reminder_type"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["reminder_channel"] | null
+          created_at?: string | null
+          done_on?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          employee_id?: string | null
+          evidence_url?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["reminder_status"] | null
+          template?: string | null
+          title?: string | null
+          type?: Database["public"]["Enums"]["reminder_type"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["reminder_channel"] | null
+          created_at?: string | null
+          done_on?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          employee_id?: string | null
+          evidence_url?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["reminder_status"] | null
+          template?: string | null
+          title?: string | null
+          type?: Database["public"]["Enums"]["reminder_type"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sticky_notes: {
+        Row: {
+          created_at: string | null
+          expires_on: string | null
+          id: string
+          linked_departments: string | null
+          note: string | null
+          pinned: boolean | null
+          tags: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_on?: string | null
+          id?: string
+          linked_departments?: string | null
+          note?: string | null
+          pinned?: boolean | null
+          tags?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_on?: string | null
+          id?: string
+          linked_departments?: string | null
+          note?: string | null
+          pinned?: boolean | null
+          tags?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role_priority: {
+        Args: { _user_id: string }
+        Returns: number
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "super_admin" | "hr" | "employee"
+      asset_status: "InUse" | "Idle" | "Repair" | "Retired"
+      attendance_source: "device" | "leave" | "override" | "none"
+      attendance_status_enum: "P" | "A" | "HD" | "L" | "OD" | "WFH"
+      employee_status: "Active" | "Inactive"
+      leave_status: "Pending" | "Approved" | "Rejected"
+      leave_type: "SL" | "CL" | "EL" | "LOP"
+      payroll_status: "Draft" | "Computed" | "Approved" | "Locked"
+      pt_state: "TS" | "AP"
+      reminder_channel: "Email" | "WhatsApp" | "Both"
+      reminder_status: "Open" | "Done"
+      reminder_type: "Birthday" | "Anniversary" | "Hike" | "Doc" | "Custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +742,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["super_admin", "hr", "employee"],
+      asset_status: ["InUse", "Idle", "Repair", "Retired"],
+      attendance_source: ["device", "leave", "override", "none"],
+      attendance_status_enum: ["P", "A", "HD", "L", "OD", "WFH"],
+      employee_status: ["Active", "Inactive"],
+      leave_status: ["Pending", "Approved", "Rejected"],
+      leave_type: ["SL", "CL", "EL", "LOP"],
+      payroll_status: ["Draft", "Computed", "Approved", "Locked"],
+      pt_state: ["TS", "AP"],
+      reminder_channel: ["Email", "WhatsApp", "Both"],
+      reminder_status: ["Open", "Done"],
+      reminder_type: ["Birthday", "Anniversary", "Hike", "Doc", "Custom"],
+    },
   },
 } as const
