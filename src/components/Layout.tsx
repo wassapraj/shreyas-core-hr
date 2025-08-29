@@ -46,26 +46,28 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card shadow-sm">
-        <div className="flex h-16 items-center justify-between px-4">
+      {/* Modern Header with gradient */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-xl shadow-lg sticky top-0 z-50">
+        <div className="flex h-16 items-center justify-between px-6">
           <div className="flex items-center gap-4">
             <img 
               src="/lovable-uploads/55fc8fc5-a89f-4a00-bcb1-ab0c5499703f.png" 
               alt="Shreyas Logo" 
-              className="h-8"
+              className="h-8 drop-shadow-sm"
             />
             <div>
-              <h1 className="text-lg font-semibold">Shreyas HRMS</h1>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Shreyas HRMS
+              </h1>
             </div>
           </div>
           
           <div className="flex items-center gap-4">
             <div className="text-sm">
-              <p className="font-medium">{user?.email}</p>
+              <p className="font-medium text-foreground">{user?.email}</p>
               <p className="text-muted-foreground capitalize">{userRole}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
+            <Button variant="modern" size="sm" onClick={handleSignOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
@@ -74,9 +76,9 @@ const Layout = ({ children }: LayoutProps) => {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 bg-card border-r h-[calc(100vh-4rem)] overflow-y-auto">
-          <nav className="p-4 space-y-2">
+        {/* Modern Sidebar with glass effect */}
+        <aside className="w-64 bg-card/30 backdrop-blur-xl border-r border-border h-[calc(100vh-4rem)] overflow-y-auto">
+          <nav className="p-4 space-y-1">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
@@ -85,13 +87,13 @@ const Layout = ({ children }: LayoutProps) => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/10'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:shadow-md'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-5 w-5" />
                   {item.name}
                 </Link>
               );
@@ -99,9 +101,9 @@ const Layout = ({ children }: LayoutProps) => {
           </nav>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="p-6">
+        {/* Main Content with modern spacing */}
+        <main className="flex-1 overflow-auto bg-background/50">
+          <div className="p-8 max-w-7xl mx-auto">
             {children}
           </div>
         </main>
