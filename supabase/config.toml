@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.reminder-mark-done]
 verify_jwt = true
+
+[functions.seed-initial-users]
+verify_jwt = false
