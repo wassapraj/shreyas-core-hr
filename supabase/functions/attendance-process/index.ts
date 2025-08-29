@@ -22,24 +22,31 @@ Deno.serve(async (req) => {
       }
     )
 
-    const { dateRange } = await req.json();
+    const { start_date, end_date } = await req.json();
     const HALF_DAY_HOURS = 4;
 
-    console.log('Processing attendance for date range:', dateRange);
-
-    // 1. Load all attendance_upload rows for selected date range (or latest 31 days)
-    let query = supabaseClient.from('attendance_upload').select('*');
+    // Default to last 31 days if no dates provided (Asia/Kolkata timezone)
+    let startDate = start_date;
+    let endDate = end_date;
     
-    if (dateRange?.startDate && dateRange?.endDate) {
-      query = query.gte('date', dateRange.startDate).lte('date', dateRange.endDate);
-    } else {
-      // Default to last 31 days
-      const thirtyOneDaysAgo = new Date();
+    if (!startDate || !endDate) {
+      const today = new Date();
+      const thirtyOneDaysAgo = new Date(today);
       thirtyOneDaysAgo.setDate(thirtyOneDaysAgo.getDate() - 31);
-      query = query.gte('date', thirtyOneDaysAgo.toISOString().split('T')[0]);
+      
+      startDate = thirtyOneDaysAgo.toISOString().split('T')[0];
+      endDate = today.toISOString().split('T')[0];
     }
 
-    const { data: uploadData, error: uploadError } = await query;
+    console.log('Processing attendance from', startDate, 'to', endDate);
+
+    // 1. Load all attendance_upload rows for the date range
+    const { data: uploadData, error: uploadError } = await supabaseClient
+      .from('attendance_upload')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate);
+
     if (uploadError) throw uploadError;
 
     console.log(`Found ${uploadData?.length || 0} attendance upload records`);
@@ -80,10 +87,14 @@ Deno.serve(async (req) => {
 
     // 4. Process each upload row and create attendance status
     const statusRecords = [];
+    const unmatchedEmpCodes = new Set<string>();
     
     for (const row of uploadData || []) {
       const employeeId = empCodeMap.get(row.emp_code);
-      if (!employeeId) continue;
+      if (!employeeId) {
+        unmatchedEmpCodes.add(row.emp_code);
+        continue;
+      }
 
       const dateStr = row.date;
       let status = 'A';
@@ -99,7 +110,7 @@ Deno.serve(async (req) => {
         if (row.first_swipe && row.last_swipe) {
           const firstSwipe = new Date(row.first_swipe);
           const lastSwipe = new Date(row.last_swipe);
-          workHours = (lastSwipe.getTime() - firstSwipe.getTime()) / (1000 * 60 * 60);
+          workHours = Math.abs(lastSwipe.getTime() - firstSwipe.getTime()) / (1000 * 60 * 60);
         }
         
         status = workHours < HALF_DAY_HOURS ? 'HD' : 'P';
@@ -119,6 +130,7 @@ Deno.serve(async (req) => {
     console.log(`Processed ${statusRecords.length} attendance status records`);
 
     // 5. Upsert into attendance_status
+    let insertedOrUpdated = 0;
     if (statusRecords.length > 0) {
       const { error: upsertError } = await supabaseClient
         .from('attendance_status')
@@ -128,13 +140,16 @@ Deno.serve(async (req) => {
         });
       
       if (upsertError) throw upsertError;
+      insertedOrUpdated = statusRecords.length;
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Processed ${statusRecords.length} attendance records`,
-        processed: statusRecords.length
+        processed_rows: uploadData?.length || 0,
+        inserted_or_updated: insertedOrUpdated,
+        unmatched_emp_codes: Array.from(unmatchedEmpCodes),
+        message: `Processed ${uploadData?.length || 0} rows. Updated ${insertedOrUpdated} attendance status records.${unmatchedEmpCodes.size > 0 ? ` Unmatched emp codes: ${Array.from(unmatchedEmpCodes).join(', ')}` : ''}`
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

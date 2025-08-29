@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import AdminSetup from "./pages/AdminSetup";
 import HRDashboard from "./pages/HRDashboard";
 import HROffers from "./pages/HROffers";
+import HRAttendance from "./pages/HRAttendance";
 import EmployeeProfile from "./pages/EmployeeProfile";
 import CandidateOfferView from "./pages/CandidateOfferView";
 import NotFound from "./pages/NotFound";
@@ -42,6 +43,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="hr">
                   <Layout><HROffers /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/attendance" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><HRAttendance /></Layout>
                 </ProtectedRoute>
               } 
             />
