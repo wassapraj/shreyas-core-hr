@@ -131,8 +131,8 @@ const AdminSetup = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-sm space-y-1">
-                  <p><strong>Email:</strong> admin@shreyasmedia.com</p>
-                  <p><strong>Password:</strong> Admin@123</p>
+                  <p><strong>Email:</strong> raj@shreyasgroup.net</p>
+                  <p><strong>Password:</strong> Admin@24365</p>
                   <p><strong>Role:</strong> Super Admin</p>
                 </div>
               </CardContent>
@@ -144,8 +144,8 @@ const AdminSetup = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-sm space-y-1">
-                  <p><strong>Email:</strong> hr@shreyasmedia.com</p>
-                  <p><strong>Password:</strong> HR@123</p>
+                  <p><strong>Email:</strong> hr@shreyasgroup.net</p>
+                  <p><strong>Password:</strong> hr@24365</p>
                   <p><strong>Role:</strong> HR</p>
                 </div>
               </CardContent>
@@ -153,12 +153,12 @@ const AdminSetup = () => {
 
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Employee Demo</CardTitle>
+                <CardTitle className="text-lg">Employee</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-sm space-y-1">
-                  <p><strong>Email:</strong> employee.demo@shreyasmedia.com</p>
-                  <p><strong>Password:</strong> Employee@123</p>
+                  <p><strong>Email:</strong> emp@shreyasgroup.net</p>
+                  <p><strong>Password:</strong> emp@24365</p>
                   <p><strong>Role:</strong> Employee</p>
                 </div>
               </CardContent>
@@ -218,22 +218,22 @@ const AdminSetup = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <h4 className="font-medium mb-1">Master Admin</h4>
-                    <p>admin@shreyasmedia.com</p>
-                    <p className="text-xs text-muted-foreground">Password: Admin@123</p>
+                    <p>raj@shreyasgroup.net</p>
+                    <p className="text-xs text-muted-foreground">Password: Admin@24365</p>
                   </div>
                   <div>
                     <h4 className="font-medium mb-1">HR User</h4>
-                    <p>hr@shreyasmedia.com</p>
-                    <p className="text-xs text-muted-foreground">Password: HR@123</p>
+                    <p>hr@shreyasgroup.net</p>
+                    <p className="text-xs text-muted-foreground">Password: hr@24365</p>
                   </div>
                   <div>
-                    <h4 className="font-medium mb-1">Employee Demo</h4>
-                    <p>employee.demo@shreyasmedia.com</p>
-                    <p className="text-xs text-muted-foreground">Password: Employee@123</p>
+                    <h4 className="font-medium mb-1">Employee</h4>
+                    <p>emp@shreyasgroup.net</p>
+                    <p className="text-xs text-muted-foreground">Password: emp@24365</p>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground mt-3">
-                  + Employee record for Demo user with sample data
+                  Three accounts with roles assigned for testing
                 </p>
               </div>
 

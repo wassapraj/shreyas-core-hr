@@ -29,37 +29,22 @@ Deno.serve(async (req) => {
     // Define users to create
     const usersToCreate = [
       {
-        email: 'admin@shreyasmedia.com',
-        password: 'Admin@123',
+        email: 'raj@shreyasgroup.net',
+        password: 'Admin@24365',
         role: 'super_admin',
         employee_data: null
       },
       {
-        email: 'hr@shreyasmedia.com',
-        password: 'HR@123',
+        email: 'hr@shreyasgroup.net',
+        password: 'hr@24365',
         role: 'hr',
         employee_data: null
       },
       {
-        email: 'employee.demo@shreyasmedia.com',
-        password: 'Employee@123',
+        email: 'emp@shreyasgroup.net',
+        password: 'emp@24365',
         role: 'employee',
-        employee_data: {
-          emp_code: 'WM0001',
-          first_name: 'Demo',
-          last_name: 'Employee',
-          email: 'employee.demo@shreyasmedia.com',
-          phone: '+91-9000000000',
-          department: 'Ops',
-          designation: 'Coordinator',
-          doj: new Date().toISOString().split('T')[0], // today's date
-          dob: '1999-01-01',
-          location: 'Hyderabad',
-          monthly_ctc: 35000,
-          pf_applicable: false,
-          pt_state: 'TS',
-          status: 'Active'
-        }
+        employee_data: null
       }
     ]
 
@@ -73,11 +58,25 @@ Deno.serve(async (req) => {
         let userId = null
         
         if (existingUser.user) {
-          console.log(`User ${userData.email} already exists`)
+          console.log(`User ${userData.email} already exists, updating password`)
           userId = existingUser.user.id
+          
+          // Update the password for existing user
+          const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+            userId,
+            { password: userData.password }
+          )
+          
+          if (updateError) {
+            console.error(`Error updating password for ${userData.email}:`, updateError)
+            results.errors.push(`Failed to update password for ${userData.email}: ${updateError.message}`)
+          } else {
+            console.log(`Updated password for ${userData.email}`)
+          }
+          
           results.users_created.push({
             email: userData.email,
-            status: 'already_exists',
+            status: 'password_updated',
             user_id: userId
           })
         } else {
