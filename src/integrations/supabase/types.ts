@@ -602,6 +602,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      setup_master_admin: {
+        Args: { admin_email: string }
+        Returns: string
+      }
+      setup_raj_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       app_role: "super_admin" | "hr" | "employee"
