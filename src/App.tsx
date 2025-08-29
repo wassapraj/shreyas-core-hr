@@ -13,6 +13,8 @@ import HRDashboard from '@/pages/HRDashboard';
 import HROffers from '@/pages/HROffers';
 import CandidateOfferView from '@/pages/CandidateOfferView';
 import EmployeeProfile from '@/pages/EmployeeProfile';
+import HREmployees from '@/pages/HREmployees';
+import EmployeeProfileManagement from '@/pages/EmployeeProfileManagement';
 import EmployeeLeave from '@/pages/EmployeeLeave';
 import HRLeaves from '@/pages/HRLeaves';
 import HRAttendance from '@/pages/HRAttendance';
@@ -57,7 +59,15 @@ const App = () => (
               path="/hr/employees" 
               element={
                 <ProtectedRoute requiredRole="hr">
-                  <Layout><div>HR Employees (Coming Soon)</div></Layout>
+                  <Layout><HREmployees /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/employees/:id" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><EmployeeProfileManagement /></Layout>
                 </ProtectedRoute>
               } 
             />
