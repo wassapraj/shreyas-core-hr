@@ -23,6 +23,10 @@ import AssetDetail from '@/pages/AssetDetail';
 import EmployeeAssets from '@/pages/EmployeeAssets';
 import HRAnnouncements from '@/pages/HRAnnouncements';
 import EmployeeAnnouncements from '@/pages/EmployeeAnnouncements';
+import HRNotes from '@/pages/HRNotes';
+import EmployeeNotes from '@/pages/EmployeeNotes';
+import HRReminders from '@/pages/HRReminders';
+import EmployeeReminders from '@/pages/EmployeeReminders';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -121,6 +125,22 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/hr/notes" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><HRNotes /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/reminders" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><HRReminders /></Layout>
+                </ProtectedRoute>
+              } 
+            />
             
             {/* Employee Routes */}
             <Route 
@@ -152,6 +172,22 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="employee">
                   <Layout><EmployeeAnnouncements /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/me/notes" 
+              element={
+                <ProtectedRoute requiredRole="employee">
+                  <Layout><EmployeeNotes /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/me/reminders" 
+              element={
+                <ProtectedRoute requiredRole="employee">
+                  <Layout><EmployeeReminders /></Layout>
                 </ProtectedRoute>
               } 
             />

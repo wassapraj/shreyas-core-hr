@@ -12,7 +12,8 @@ import {
   Home,
   LogOut,
   User,
-  FileText
+  FileText,
+  StickyNote
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -39,11 +40,15 @@ const Layout = ({ children }: LayoutProps) => {
       { name: 'Offers', href: '/hr/offers', icon: FileText },
       { name: 'Assets', href: '/hr/assets', icon: Package },
       { name: 'Announcements', href: '/hr/announcements', icon: Bell },
+      { name: 'Notes', href: '/hr/notes', icon: StickyNote },
+      { name: 'Reminders', href: '/hr/reminders', icon: Clock },
     ] : []),
     { name: 'My Profile', href: '/me', icon: User },
     { name: 'My Leaves', href: '/me/leave', icon: Calendar },
     { name: 'My Assets', href: '/me/assets', icon: Package },
     { name: 'Announcements', href: '/me/announcements', icon: Bell },
+    { name: 'Notes', href: '/me/notes', icon: StickyNote },
+    { name: 'Reminders', href: '/me/reminders', icon: Clock },
   ];
 
   return (
