@@ -1,180 +1,169 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.56.0'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests  
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    )
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    const { runId } = await req.json();
+    const { run_id } = await req.json();
     
-    if (!runId) {
-      throw new Error('runId is required');
-    }
+    console.log('Computing payroll for run_id:', run_id);
 
-    console.log('Computing payroll for run:', runId);
-
-    // Get payroll run details
-    const { data: payrollRun, error: runError } = await supabaseClient
+    // Load payroll_runs row
+    const { data: payrollRun, error: runError } = await supabase
       .from('payroll_runs')
       .select('*')
-      .eq('run_id', runId)
+      .eq('run_id', run_id)
       .single();
-    
-    if (runError) throw runError;
-    if (!payrollRun) throw new Error('Payroll run not found');
 
-    const { month, year } = payrollRun;
+    if (runError || !payrollRun) {
+      throw new Error(`Payroll run not found: ${run_id}`);
+    }
+
+    console.log('Found payroll run:', payrollRun);
 
     // Get all active employees
-    const { data: employees, error: empError } = await supabaseClient
+    const { data: employees, error: empError } = await supabase
       .from('employees')
       .select('*')
       .eq('status', 'Active');
-    
+
     if (empError) throw empError;
 
-    console.log(`Processing payroll for ${employees.length} employees`);
+    console.log(`Processing payroll for ${employees?.length || 0} employees`);
 
-    // Get attendance status for the month
-    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // Last day of month
-
-    const { data: attendanceData, error: attError } = await supabaseClient
-      .from('attendance_status')
-      .select('employee_id, status')
-      .gte('date', startDate)
-      .lte('date', endDate);
-    
-    if (attError) throw attError;
-
-    // Group attendance by employee
-    const attendanceMap = new Map<string, { absent: number; halfday: number }>();
-    attendanceData.forEach(att => {
-      if (!attendanceMap.has(att.employee_id)) {
-        attendanceMap.set(att.employee_id, { absent: 0, halfday: 0 });
-      }
-      
-      const emp = attendanceMap.get(att.employee_id)!;
-      if (att.status === 'A') emp.absent++;
-      if (att.status === 'HD') emp.halfday++;
-    });
+    let processed = 0;
+    let grossTotals = 0;
+    let netTotals = 0;
+    let lopTotals = 0;
 
     // Process each employee
-    const payrollItems = [];
-    
-    for (const employee of employees) {
-      const attendance = attendanceMap.get(employee.id) || { absent: 0, halfday: 0 };
-      
-      // Calculate LOP days
-      const lopDays = attendance.absent + (attendance.halfday * 0.5);
-      
-      // Get CTC
-      const ctc = employee.monthly_ctc || 0;
-      const perDay = ctc / 30; // Simple calculation, no working days initially
-      const lopAmount = perDay * lopDays;
-      
-      // Split CTC
-      const basic = ctc * 0.4;
-      const hra = basic * 0.4;
-      const special = ctc - basic - hra;
-      
-      // Calculate deductions
-      const pf = employee.pf_applicable ? Math.min(basic * 0.12, 1800) : 0;
-      const pt = employee.pt_state === 'AP' ? 200 : 200; // Both states get 200 for now
-      
-      const totalDeductions = pf + pt + lopAmount;
-      const net = Math.max(0, ctc - totalDeductions);
-      
-      // Create breakup JSON
-      const breakup = {
-        BASIC: basic,
-        HRA: hra,
-        SPECIAL: special,
-        PF: pf,
-        PT: pt,
-        LOP: lopAmount,
-        gross: ctc,
-        deductions: totalDeductions,
-        net: net
-      };
-      
-      payrollItems.push({
-        run_id: runId,
-        employee_id: employee.id,
-        gross: ctc,
-        deductions: totalDeductions,
-        net: net,
-        breakup_json: breakup,
-        lop_days: lopDays,
-        paid: false
-      });
+    for (const employee of employees || []) {
+      try {
+        // Count attendance for the month/year
+        const startDate = new Date(payrollRun.year, payrollRun.month - 1, 1);
+        const endDate = new Date(payrollRun.year, payrollRun.month, 0);
+
+        console.log(`Processing ${employee.emp_code} for ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
+
+        const { data: attendance, error: attError } = await supabase
+          .from('attendance_status')
+          .select('status')
+          .eq('employee_id', employee.id)
+          .gte('date', startDate.toISOString().split('T')[0])
+          .lte('date', endDate.toISOString().split('T')[0]);
+
+        if (attError) {
+          console.error(`Error fetching attendance for ${employee.emp_code}:`, attError);
+          continue;
+        }
+
+        // Count absent and half-day
+        const absentCount = attendance?.filter(a => a.status === 'A').length || 0;
+        const halfDayCount = attendance?.filter(a => a.status === 'HD').length || 0;
+        const lopDays = absentCount + (0.5 * halfDayCount);
+
+        // Calculate salary components
+        const ctc = Number(employee.monthly_ctc) || 0;
+        const perDay = ctc / 30;
+        const lopAmount = perDay * lopDays;
+
+        const basic = 0.4 * ctc;
+        const hra = 0.4 * basic;
+        const special = ctc - (basic + hra);
+
+        const pf = employee.pf_applicable ? Math.min(0.12 * basic, 1800) : 0;
+        const pt = employee.pt_state === 'AP' ? 200 : 200; // Static for now
+        const totalDeductions = pf + pt + lopAmount;
+        const net = Math.max(0, ctc - totalDeductions);
+
+        const breakupJson = {
+          BASIC: basic,
+          HRA: hra,
+          SPECIAL: special,
+          PF: pf,
+          PT: pt,
+          LOP: lopAmount
+        };
+
+        console.log(`${employee.emp_code}: CTC=${ctc}, LOP=${lopDays}, Net=${net}`);
+
+        // Upsert payroll_items
+        const { error: itemError } = await supabase
+          .from('payroll_items')
+          .upsert({
+            run_id: run_id,
+            employee_id: employee.id,
+            gross: ctc,
+            deductions: totalDeductions,
+            net: net,
+            lop_days: lopDays,
+            breakup_json: breakupJson,
+            paid: false
+          }, {
+            onConflict: 'run_id,employee_id'
+          });
+
+        if (itemError) {
+          console.error(`Error upserting payroll item for ${employee.emp_code}:`, itemError);
+          continue;
+        }
+
+        processed++;
+        grossTotals += ctc;
+        netTotals += net;
+        lopTotals += lopDays;
+
+      } catch (error) {
+        console.error(`Error processing employee ${employee.emp_code}:`, error);
+        continue;
+      }
     }
 
-    console.log(`Created ${payrollItems.length} payroll items`);
-
-    // Upsert payroll items
-    if (payrollItems.length > 0) {
-      const { error: upsertError } = await supabaseClient
-        .from('payroll_items')
-        .upsert(payrollItems, { 
-          onConflict: 'run_id,employee_id',
-          ignoreDuplicates: false 
-        });
-      
-      if (upsertError) throw upsertError;
-    }
-
-    // Update payroll run status
-    const { error: updateError } = await supabaseClient
+    // Update payroll_runs status
+    const { error: updateError } = await supabase
       .from('payroll_runs')
       .update({ status: 'Computed' })
-      .eq('run_id', runId);
-    
-    if (updateError) throw updateError;
+      .eq('run_id', run_id);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Computed payroll for ${payrollItems.length} employees`,
-        processed: payrollItems.length,
-        totalGross: payrollItems.reduce((sum, item) => sum + item.gross, 0),
-        totalDeductions: payrollItems.reduce((sum, item) => sum + item.deductions, 0),
-        totalNet: payrollItems.reduce((sum, item) => sum + item.net, 0)
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
+    if (updateError) {
+      console.error('Error updating payroll run status:', updateError);
+    }
+
+    const result = {
+      processed,
+      lopTotals: Math.round(lopTotals * 100) / 100,
+      grossTotals: Math.round(grossTotals * 100) / 100,
+      netTotals: Math.round(netTotals * 100) / 100
+    };
+
+    console.log('Payroll computation completed:', result);
+
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
-    console.error('Error computing payroll:', error);
+    console.error('Error in payroll-compute:', error);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message
-      }),
+      JSON.stringify({ error: error.message }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
-    )
+    );
   }
-})
+});

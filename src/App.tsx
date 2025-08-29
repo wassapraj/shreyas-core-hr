@@ -9,13 +9,15 @@ import Layout from "@/components/Layout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AdminSetup from "./pages/AdminSetup";
-import HRDashboard from "./pages/HRDashboard";
-import HROffers from "./pages/HROffers";
-import HRAttendance from "./pages/HRAttendance";
-import EmployeeProfile from "./pages/EmployeeProfile";
-import EmployeeLeave from "./pages/EmployeeLeave";
-import HRLeaves from "./pages/HRLeaves";
-import CandidateOfferView from "./pages/CandidateOfferView";
+import HRDashboard from "@/pages/HRDashboard";
+import HROffers from "@/pages/HROffers";
+import CandidateOfferView from "@/pages/CandidateOfferView";
+import EmployeeProfile from "@/pages/EmployeeProfile";
+import EmployeeLeave from "@/pages/EmployeeLeave";
+import HRLeaves from "@/pages/HRLeaves";
+import HRAttendance from "@/pages/HRAttendance";
+import PayrollRuns from "@/pages/PayrollRuns";
+import PayrollItems from "@/pages/PayrollItems";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,11 +34,53 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin-setup" element={<AdminSetup />} />
             <Route path="/offer/:token" element={<CandidateOfferView />} />
+            
+            {/* HR Routes */}
             <Route 
               path="/hr" 
               element={
                 <ProtectedRoute requiredRole="hr">
                   <Layout><HRDashboard /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/employees" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><div>HR Employees (Coming Soon)</div></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/attendance" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><HRAttendance /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/leaves" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><HRLeaves /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/payroll" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><PayrollRuns /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/payroll/:runId" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><PayrollItems /></Layout>
                 </ProtectedRoute>
               } 
             />
@@ -49,13 +93,23 @@ const App = () => (
               } 
             />
             <Route 
-              path="/hr/attendance" 
+              path="/hr/assets" 
               element={
                 <ProtectedRoute requiredRole="hr">
-                  <Layout><HRAttendance /></Layout>
+                  <Layout><div>HR Assets (Coming Soon)</div></Layout>
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/hr/announcements" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><div>HR Announcements (Coming Soon)</div></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Employee Routes */}
             <Route 
               path="/me" 
               element={
@@ -72,14 +126,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/hr/leaves" 
-              element={
-                <ProtectedRoute requiredRole="hr">
-                  <Layout><HRLeaves /></Layout>
-                </ProtectedRoute>
-              } 
-            />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

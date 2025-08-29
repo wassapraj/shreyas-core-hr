@@ -35,3 +35,9 @@ verify_jwt = true
 
 [functions.payroll-compute]
 verify_jwt = true
+
+[functions.payroll-mark-paid]
+verify_jwt = true
+
+[functions.payroll-render-payslip]
+verify_jwt = true
