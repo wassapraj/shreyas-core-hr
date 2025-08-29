@@ -13,6 +13,8 @@ import HRDashboard from "./pages/HRDashboard";
 import HROffers from "./pages/HROffers";
 import HRAttendance from "./pages/HRAttendance";
 import EmployeeProfile from "./pages/EmployeeProfile";
+import EmployeeLeave from "./pages/EmployeeLeave";
+import HRLeaves from "./pages/HRLeaves";
 import CandidateOfferView from "./pages/CandidateOfferView";
 import NotFound from "./pages/NotFound";
 
@@ -59,6 +61,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Layout><EmployeeProfile /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/me/leave" 
+              element={
+                <ProtectedRoute requiredRole="employee">
+                  <Layout><EmployeeLeave /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/leaves" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><HRLeaves /></Layout>
                 </ProtectedRoute>
               } 
             />

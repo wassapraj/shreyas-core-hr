@@ -6,6 +6,12 @@ verify_jwt = true
 [functions.leave-autofill]  
 verify_jwt = true
 
+[functions.leave-compute-days]
+verify_jwt = true
+
+[functions.leave-set-status]
+verify_jwt = true
+
 [functions.payroll-compute]
 verify_jwt = true
 

@@ -34,7 +34,7 @@ const Layout = ({ children }: LayoutProps) => {
       { name: 'HR Dashboard', href: '/hr', icon: Home },
       { name: 'Employees', href: '/hr/employees', icon: Users },
       { name: 'Attendance', href: '/hr/attendance', icon: Clock },
-      { name: 'Leaves', href: '/hr/leaves', icon: Calendar },
+      { name: 'Leave Inbox', href: '/hr/leaves', icon: Calendar },
       { name: 'Payroll', href: '/hr/payroll', icon: DollarSign },
       { name: 'Offers', href: '/hr/offers', icon: FileText },
       { name: 'Assets', href: '/hr/assets', icon: Package },
