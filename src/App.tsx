@@ -31,6 +31,8 @@ import EmployeeNotes from "./pages/EmployeeNotes";
 import HRReminders from "./pages/HRReminders";
 import EmployeeReminders from "./pages/EmployeeReminders";
 import NotFound from "./pages/NotFound";
+import AssetHandoverInbox from '@/pages/AssetHandoverInbox';
+import EmployeeProfileDetail from '@/pages/EmployeeProfileDetail';
 
 const queryClient = new QueryClient();
 
@@ -67,8 +69,10 @@ const App = () => (
             <Route 
               path="/hr/employees/:id" 
               element={
-                <ProtectedRoute requiredRole="hr">
-                  <Layout><EmployeeProfileManagement /></Layout>
+                <ProtectedRoute requiredRoles={['hr', 'super_admin', 'employee']}>
+                  <Layout>
+                    <EmployeeProfileDetail />
+                  </Layout>
                 </ProtectedRoute>
               } 
             />
@@ -133,6 +137,16 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="hr">
                   <Layout><AssetDetail /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/assets/handover-inbox" 
+              element={
+                <ProtectedRoute requiredRoles={['hr', 'super_admin']}>
+                  <Layout>
+                    <AssetHandoverInbox />
+                  </Layout>
                 </ProtectedRoute>
               } 
             />

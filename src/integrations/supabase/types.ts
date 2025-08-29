@@ -98,6 +98,67 @@ export type Database = {
           },
         ]
       }
+      asset_handover_requests: {
+        Row: {
+          approved_by: string | null
+          asset_id: string
+          comments: string | null
+          created_at: string | null
+          from_employee_id: string
+          id: string
+          requested_on: string
+          status: Database["public"]["Enums"]["handover_status"]
+          to_employee_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          asset_id: string
+          comments?: string | null
+          created_at?: string | null
+          from_employee_id: string
+          id?: string
+          requested_on?: string
+          status?: Database["public"]["Enums"]["handover_status"]
+          to_employee_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          asset_id?: string
+          comments?: string | null
+          created_at?: string | null
+          from_employee_id?: string
+          id?: string
+          requested_on?: string
+          status?: Database["public"]["Enums"]["handover_status"]
+          to_employee_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_handover_requests_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_handover_requests_from_employee_id_fkey"
+            columns: ["from_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_handover_requests_to_employee_id_fkey"
+            columns: ["to_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assets: {
         Row: {
           asset_code: string
@@ -219,84 +280,289 @@ export type Database = {
       }
       employees: {
         Row: {
+          aadhaar_number: string | null
+          alt_phone: string | null
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_branch: string | null
+          bank_ifsc: string | null
+          blood_group: string | null
+          brand: string | null
           created_at: string | null
+          current_address: string | null
           department: string | null
           designation: string | null
           dob: string | null
           doj: string | null
           email: string
+          emergency_contact_name: string | null
+          emergency_phone: string | null
           emp_code: string
+          facebook: string | null
+          father_name: string | null
           first_name: string
+          gender: string | null
+          highlights_cache: Json | null
           hike_cycle_months: number | null
+          hobbies_interests: string | null
           id: string
+          instagram: string | null
+          languages_known: string | null
           last_hike_amount: number | null
           last_hike_on: string | null
           last_hike_pct: number | null
           last_name: string | null
+          linkedin: string | null
           location: string | null
           manager_employee_id: string | null
+          marital_status: string | null
           monthly_ctc: number | null
+          mother_name: string | null
+          open_box_notes: string | null
+          other_social: string | null
+          pan_number: string | null
+          passport_photo_url: string | null
+          permanent_address: string | null
+          personal_vision: string | null
           pf_applicable: boolean | null
+          pf_portal_pass: string | null
+          pf_portal_user: string | null
           phone: string | null
+          photo_url: string | null
           pt_state: Database["public"]["Enums"]["pt_state"] | null
+          qualification: string | null
+          qualification_proof_url: string | null
+          regular_photo_url: string | null
           status: Database["public"]["Enums"]["employee_status"] | null
+          tshirt_size: string | null
+          twitter: string | null
           updated_at: string | null
+          upi_id: string | null
           user_id: string | null
+          whatsapp_number: string | null
         }
         Insert: {
+          aadhaar_number?: string | null
+          alt_phone?: string | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_branch?: string | null
+          bank_ifsc?: string | null
+          blood_group?: string | null
+          brand?: string | null
           created_at?: string | null
+          current_address?: string | null
           department?: string | null
           designation?: string | null
           dob?: string | null
           doj?: string | null
           email: string
+          emergency_contact_name?: string | null
+          emergency_phone?: string | null
           emp_code: string
+          facebook?: string | null
+          father_name?: string | null
           first_name: string
+          gender?: string | null
+          highlights_cache?: Json | null
           hike_cycle_months?: number | null
+          hobbies_interests?: string | null
           id?: string
+          instagram?: string | null
+          languages_known?: string | null
           last_hike_amount?: number | null
           last_hike_on?: string | null
           last_hike_pct?: number | null
           last_name?: string | null
+          linkedin?: string | null
           location?: string | null
           manager_employee_id?: string | null
+          marital_status?: string | null
           monthly_ctc?: number | null
+          mother_name?: string | null
+          open_box_notes?: string | null
+          other_social?: string | null
+          pan_number?: string | null
+          passport_photo_url?: string | null
+          permanent_address?: string | null
+          personal_vision?: string | null
           pf_applicable?: boolean | null
+          pf_portal_pass?: string | null
+          pf_portal_user?: string | null
           phone?: string | null
+          photo_url?: string | null
           pt_state?: Database["public"]["Enums"]["pt_state"] | null
+          qualification?: string | null
+          qualification_proof_url?: string | null
+          regular_photo_url?: string | null
           status?: Database["public"]["Enums"]["employee_status"] | null
+          tshirt_size?: string | null
+          twitter?: string | null
           updated_at?: string | null
+          upi_id?: string | null
           user_id?: string | null
+          whatsapp_number?: string | null
         }
         Update: {
+          aadhaar_number?: string | null
+          alt_phone?: string | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_branch?: string | null
+          bank_ifsc?: string | null
+          blood_group?: string | null
+          brand?: string | null
           created_at?: string | null
+          current_address?: string | null
           department?: string | null
           designation?: string | null
           dob?: string | null
           doj?: string | null
           email?: string
+          emergency_contact_name?: string | null
+          emergency_phone?: string | null
           emp_code?: string
+          facebook?: string | null
+          father_name?: string | null
           first_name?: string
+          gender?: string | null
+          highlights_cache?: Json | null
           hike_cycle_months?: number | null
+          hobbies_interests?: string | null
           id?: string
+          instagram?: string | null
+          languages_known?: string | null
           last_hike_amount?: number | null
           last_hike_on?: string | null
           last_hike_pct?: number | null
           last_name?: string | null
+          linkedin?: string | null
           location?: string | null
           manager_employee_id?: string | null
+          marital_status?: string | null
           monthly_ctc?: number | null
+          mother_name?: string | null
+          open_box_notes?: string | null
+          other_social?: string | null
+          pan_number?: string | null
+          passport_photo_url?: string | null
+          permanent_address?: string | null
+          personal_vision?: string | null
           pf_applicable?: boolean | null
+          pf_portal_pass?: string | null
+          pf_portal_user?: string | null
           phone?: string | null
+          photo_url?: string | null
           pt_state?: Database["public"]["Enums"]["pt_state"] | null
+          qualification?: string | null
+          qualification_proof_url?: string | null
+          regular_photo_url?: string | null
           status?: Database["public"]["Enums"]["employee_status"] | null
+          tshirt_size?: string | null
+          twitter?: string | null
           updated_at?: string | null
+          upi_id?: string | null
           user_id?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "employees_manager_employee_id_fkey"
             columns: ["manager_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hikes: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          date: string
+          employee_id: string
+          id: string
+          note: string | null
+          pct: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          date: string
+          employee_id: string
+          id?: string
+          note?: string | null
+          pct?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          date?: string
+          employee_id?: string
+          id?: string
+          note?: string | null
+          pct?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hikes_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_policies: {
+        Row: {
+          card_image_url: string | null
+          created_at: string | null
+          employee_id: string
+          end_date: string | null
+          id: string
+          insurer_logo_url: string | null
+          insurer_name: string | null
+          notes: string | null
+          policy_number: string | null
+          product_name: string | null
+          start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          card_image_url?: string | null
+          created_at?: string | null
+          employee_id: string
+          end_date?: string | null
+          id?: string
+          insurer_logo_url?: string | null
+          insurer_name?: string | null
+          notes?: string | null
+          policy_number?: string | null
+          product_name?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          card_image_url?: string | null
+          created_at?: string | null
+          employee_id?: string
+          end_date?: string | null
+          id?: string
+          insurer_logo_url?: string | null
+          insurer_name?: string | null
+          notes?: string | null
+          policy_number?: string | null
+          product_name?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_policies_employee_id_fkey"
+            columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
@@ -358,6 +624,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "leave_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages_log: {
+        Row: {
+          body: string | null
+          channel: Database["public"]["Enums"]["message_channel"]
+          created_at: string | null
+          created_by: string
+          created_on: string
+          employee_id: string
+          id: string
+          subject: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          body?: string | null
+          channel: Database["public"]["Enums"]["message_channel"]
+          created_at?: string | null
+          created_by: string
+          created_on?: string
+          employee_id: string
+          id?: string
+          subject?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          body?: string | null
+          channel?: Database["public"]["Enums"]["message_channel"]
+          created_at?: string | null
+          created_by?: string
+          created_on?: string
+          employee_id?: string
+          id?: string
+          subject?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_log_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
@@ -533,6 +843,62 @@ export type Database = {
         }
         Relationships: []
       }
+      payslips: {
+        Row: {
+          created_at: string | null
+          deductions: number | null
+          employee_id: string
+          gross: number | null
+          id: string
+          month: number
+          net: number | null
+          pdf_url: string | null
+          remarks: string | null
+          run_id: string | null
+          updated_at: string | null
+          visible_to_employee: boolean
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          deductions?: number | null
+          employee_id: string
+          gross?: number | null
+          id?: string
+          month: number
+          net?: number | null
+          pdf_url?: string | null
+          remarks?: string | null
+          run_id?: string | null
+          updated_at?: string | null
+          visible_to_employee?: boolean
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          deductions?: number | null
+          employee_id?: string
+          gross?: number | null
+          id?: string
+          month?: number
+          net?: number | null
+          pdf_url?: string | null
+          remarks?: string | null
+          run_id?: string | null
+          updated_at?: string | null
+          visible_to_employee?: boolean
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reminders: {
         Row: {
           channel: Database["public"]["Enums"]["reminder_channel"] | null
@@ -684,8 +1050,10 @@ export type Database = {
       attendance_source: "device" | "leave" | "override" | "none"
       attendance_status_enum: "P" | "A" | "HD" | "L" | "OD" | "WFH"
       employee_status: "Active" | "Inactive"
+      handover_status: "Requested" | "Approved" | "Rejected" | "Completed"
       leave_status: "Pending" | "Approved" | "Rejected"
       leave_type: "SL" | "CL" | "EL" | "LOP"
+      message_channel: "Email" | "WhatsApp"
       offer_status: "Draft" | "Sent" | "Accepted" | "Declined" | "Withdrawn"
       payroll_status: "Draft" | "Computed" | "Approved" | "Locked"
       pt_state: "TS" | "AP"
@@ -824,8 +1192,10 @@ export const Constants = {
       attendance_source: ["device", "leave", "override", "none"],
       attendance_status_enum: ["P", "A", "HD", "L", "OD", "WFH"],
       employee_status: ["Active", "Inactive"],
+      handover_status: ["Requested", "Approved", "Rejected", "Completed"],
       leave_status: ["Pending", "Approved", "Rejected"],
       leave_type: ["SL", "CL", "EL", "LOP"],
+      message_channel: ["Email", "WhatsApp"],
       offer_status: ["Draft", "Sent", "Accepted", "Declined", "Withdrawn"],
       payroll_status: ["Draft", "Computed", "Approved", "Locked"],
       pt_state: ["TS", "AP"],
