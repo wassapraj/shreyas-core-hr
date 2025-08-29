@@ -42,6 +42,8 @@ const Layout = ({ children }: LayoutProps) => {
     ] : []),
     { name: 'My Profile', href: '/me', icon: User },
     { name: 'My Leaves', href: '/me/leave', icon: Calendar },
+    { name: 'My Assets', href: '/me/assets', icon: Package },
+    { name: 'Announcements', href: '/me/announcements', icon: Bell },
   ];
 
   return (

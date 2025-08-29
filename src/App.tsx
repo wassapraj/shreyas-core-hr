@@ -9,15 +9,20 @@ import Layout from "@/components/Layout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AdminSetup from "./pages/AdminSetup";
-import HRDashboard from "@/pages/HRDashboard";
-import HROffers from "@/pages/HROffers";
-import CandidateOfferView from "@/pages/CandidateOfferView";
-import EmployeeProfile from "@/pages/EmployeeProfile";
-import EmployeeLeave from "@/pages/EmployeeLeave";
-import HRLeaves from "@/pages/HRLeaves";
-import HRAttendance from "@/pages/HRAttendance";
-import PayrollRuns from "@/pages/PayrollRuns";
-import PayrollItems from "@/pages/PayrollItems";
+import HRDashboard from '@/pages/HRDashboard';
+import HROffers from '@/pages/HROffers';
+import CandidateOfferView from '@/pages/CandidateOfferView';
+import EmployeeProfile from '@/pages/EmployeeProfile';
+import EmployeeLeave from '@/pages/EmployeeLeave';
+import HRLeaves from '@/pages/HRLeaves';
+import HRAttendance from '@/pages/HRAttendance';
+import PayrollRuns from '@/pages/PayrollRuns';
+import PayrollItems from '@/pages/PayrollItems';
+import HRAssets from '@/pages/HRAssets';
+import AssetDetail from '@/pages/AssetDetail';
+import EmployeeAssets from '@/pages/EmployeeAssets';
+import HRAnnouncements from '@/pages/HRAnnouncements';
+import EmployeeAnnouncements from '@/pages/EmployeeAnnouncements';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -96,7 +101,15 @@ const App = () => (
               path="/hr/assets" 
               element={
                 <ProtectedRoute requiredRole="hr">
-                  <Layout><div>HR Assets (Coming Soon)</div></Layout>
+                  <Layout><HRAssets /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/hr/assets/:id" 
+              element={
+                <ProtectedRoute requiredRole="hr">
+                  <Layout><AssetDetail /></Layout>
                 </ProtectedRoute>
               } 
             />
@@ -104,7 +117,7 @@ const App = () => (
               path="/hr/announcements" 
               element={
                 <ProtectedRoute requiredRole="hr">
-                  <Layout><div>HR Announcements (Coming Soon)</div></Layout>
+                  <Layout><HRAnnouncements /></Layout>
                 </ProtectedRoute>
               } 
             />
@@ -123,6 +136,22 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="employee">
                   <Layout><EmployeeLeave /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/me/assets" 
+              element={
+                <ProtectedRoute requiredRole="employee">
+                  <Layout><EmployeeAssets /></Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/me/announcements" 
+              element={
+                <ProtectedRoute requiredRole="employee">
+                  <Layout><EmployeeAnnouncements /></Layout>
                 </ProtectedRoute>
               } 
             />
