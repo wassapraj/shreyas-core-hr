@@ -346,7 +346,7 @@ export default function HRReminders() {
                       <SelectValue placeholder="Select employee" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No specific employee</SelectItem>
+                      <SelectItem value="none">No specific employee</SelectItem>
                       {employees.map((emp) => (
                         <SelectItem key={emp.id} value={emp.id}>
                           {emp.first_name} {emp.last_name} ({emp.emp_code})

@@ -218,7 +218,7 @@ const HRDashboard = () => {
               <SelectValue placeholder="All Departments" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Departments</SelectItem>
+              <SelectItem value="all">All Departments</SelectItem>
               {departments.map(dept => (
                 <SelectItem key={dept} value={dept}>{dept}</SelectItem>
               ))}
@@ -230,7 +230,7 @@ const HRDashboard = () => {
               <SelectValue placeholder="All Managers" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Managers</SelectItem>
+              <SelectItem value="all">All Managers</SelectItem>
               {managers.map(manager => (
                 <SelectItem key={manager.id} value={manager.id}>
                   {manager.first_name} {manager.last_name} ({manager.emp_code})

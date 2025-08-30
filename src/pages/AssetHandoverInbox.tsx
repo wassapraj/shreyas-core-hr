@@ -252,7 +252,7 @@ const AssetHandoverInbox = () => {
                       <SelectValue placeholder="Select employee or leave empty to return to store" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Return to Store</SelectItem>
+                      <SelectItem value="store">Return to Store</SelectItem>
                       {employees.map((emp) => (
                         <SelectItem key={emp.id} value={emp.id}>
                           {emp.first_name} {emp.last_name} ({emp.emp_code}) - {emp.department}
