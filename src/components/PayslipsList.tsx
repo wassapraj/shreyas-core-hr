@@ -398,7 +398,6 @@ export const PayslipsList = ({ employee, isHR }: PayslipsListProps) => {
       )}
     </div>
   );
-  };
 };
 
 export default PayslipsList;

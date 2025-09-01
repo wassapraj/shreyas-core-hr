@@ -18,10 +18,14 @@ interface DocumentUploadProps {
 interface DocumentItem {
   id: string;
   title: string;
-  s3_key: string;
-  content_type: string;
-  size: number;
+  file_path?: string;
+  s3_key?: string;
+  content_type?: string;
+  size?: number;
   created_at: string;
+  employee_id?: string;
+  signed_url?: string;
+  updated_at?: string;
 }
 
 const documentTypes = [

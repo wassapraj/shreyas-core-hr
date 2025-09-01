@@ -226,21 +226,11 @@ function App() {
               </ProtectedRoute>
             } />
             
-            <Route path="/hr/payroll/items" element={
-              <ProtectedRoute requiredRole="hr">
-                <Layout>
-                  <PayrollItems />
-                </Layout>
-              </ProtectedRoute>
-            } />
+            <Route path="/hr/payroll/items" element={<ProtectedRoute requiredRole="hr"><Layout><PayrollItems /></Layout></ProtectedRoute>} />
             
-            <Route path="/hr/admin/data-tools" element={
-              <ProtectedRoute requiredRole="super_admin">
-                <Layout>
-                  <DataMaintenance />
-                </Layout>
-              </ProtectedRoute>
-            } />
+            <Route path="/hr/tools/bulk-assign" element={<ProtectedRoute requiredRole="hr"><Layout><BulkAssignment /></Layout></ProtectedRoute>} />
+            
+            <Route path="/hr/admin/data-tools" element={<ProtectedRoute requiredRole="super_admin"><Layout><DataMaintenance /></Layout></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

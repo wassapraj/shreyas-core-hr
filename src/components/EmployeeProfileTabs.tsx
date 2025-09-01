@@ -34,6 +34,8 @@ import {
   Copy,
   ExternalLink
 } from 'lucide-react';
+import { EmployeeTerminateDialog } from '@/components/EmployeeTerminateDialog';
+import { EmployeeDeleteDialog } from '@/components/EmployeeDeleteDialog';
 import { AvatarUpload } from './AvatarUpload';
 
 interface EmployeeProfileTabsProps {
