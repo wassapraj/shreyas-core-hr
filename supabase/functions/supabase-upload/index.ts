@@ -20,13 +20,19 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     )
 
-    // Initialize S3 client
+    // Initialize S3 client with explicit configuration to avoid fs.readFile issues
     const s3Client = new S3Client({
       region: Deno.env.get('AWS_REGION') ?? 'us-east-1',
       credentials: {
         accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID') ?? '',
         secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY') ?? '',
       },
+      // Disable config file loading to avoid fs.readFile issues in Deno
+      profile: undefined,
+      credentialDefaultProvider: () => Promise.resolve({
+        accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID') ?? '',
+        secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY') ?? '',
+      })
     })
 
     const formData = await req.formData()
