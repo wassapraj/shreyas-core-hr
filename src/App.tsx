@@ -28,6 +28,7 @@ import HRReminders from '@/pages/HRReminders';
 import HRNotes from '@/pages/HRNotes';
 import PayrollRuns from '@/pages/PayrollRuns';
 import PayrollItems from '@/pages/PayrollItems';
+import DataMaintenance from '@/pages/DataMaintenance';
 
 import EmployeeProfile from '@/pages/EmployeeProfile';
 import EmployeeAnnouncements from '@/pages/EmployeeAnnouncements';
@@ -229,6 +230,14 @@ function App() {
               <ProtectedRoute requiredRole="hr">
                 <Layout>
                   <PayrollItems />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/hr/admin/data-tools" element={
+              <ProtectedRoute requiredRole="super_admin">
+                <Layout>
+                  <DataMaintenance />
                 </Layout>
               </ProtectedRoute>
             } />

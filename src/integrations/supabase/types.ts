@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_email: string
+          counts: Json | null
+          created_at: string
+          id: string
+          timestamp: string
+        }
+        Insert: {
+          action: string
+          actor_email: string
+          counts?: Json | null
+          created_at?: string
+          id?: string
+          timestamp?: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string
+          counts?: Json | null
+          created_at?: string
+          id?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           audience: string | null

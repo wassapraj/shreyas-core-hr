@@ -240,7 +240,24 @@ export default function HREmployees() {
             </TableBody>
           </Table>
 
-          {filteredEmployees.length === 0 && (
+          {filteredEmployees.length === 0 && employees.length === 0 && (
+            <div className="text-center py-16">
+              <h3 className="text-lg font-semibold mb-2">No employees found</h3>
+              <p className="text-muted-foreground mb-6">Get started by adding your first employee or importing from CSV.</p>
+              <div className="flex gap-3 justify-center">
+                <Button onClick={() => navigate('/hr/employees/new')}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Employee
+                </Button>
+                <Button onClick={() => navigate('/hr/employees/import')} variant="outline">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Import Employees
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {filteredEmployees.length === 0 && employees.length > 0 && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No employees found matching the criteria.</p>
             </div>
