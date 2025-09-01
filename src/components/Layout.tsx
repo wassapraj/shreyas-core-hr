@@ -92,7 +92,7 @@ const Layout = ({ children }: LayoutProps) => {
               
               return (
                 <Link
-                  key={item.name}
+                  key={item.href}
                   to={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                     isActive
