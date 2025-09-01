@@ -82,18 +82,32 @@ serve(async (req) => {
       // Handle termination letter - this would be processed elsewhere
       console.log('Termination letter uploaded:', s3Key);
     } else {
-      // Insert into employee_documents for other documents
-      const { error: insertError } = await supabaseClient
-        .from('employee_documents')
-        .insert({
-          employee_id: employeeId,
-          title: fileName,
-          s3_key: s3Key,
-          content_type: contentType,
-          size: buffer.length
-        });
+      // Check if this is a standard document type
+      const standardDocumentTypes = ['aadhaar', 'pan', 'qualification', 'photo', 'passport_photo', 'regular_photo'];
+      
+      if (standardDocumentTypes.includes(documentKind)) {
+        // Update employee table with specific document key
+        const updateField = `${documentKind}_key`;
+        const { error: updateError } = await supabaseClient
+          .from('employees')
+          .update({ [updateField]: s3Key })
+          .eq('id', employeeId);
 
-      if (insertError) throw insertError;
+        if (updateError) throw updateError;
+      } else {
+        // Insert into employee_documents for other documents
+        const { error: insertError } = await supabaseClient
+          .from('employee_documents')
+          .insert({
+            employee_id: employeeId,
+            title: fileName,
+            s3_key: s3Key,
+            content_type: contentType,
+            size: buffer.length
+          });
+
+        if (insertError) throw insertError;
+      }
     }
 
     // Generate signed URL for immediate access

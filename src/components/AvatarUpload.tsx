@@ -74,18 +74,7 @@ export const AvatarUpload = ({ employee, onAvatarUpdated }: AvatarUploadProps) =
         throw error;
       }
 
-      // Update employee record with new avatar URL
-      const { error: updateError } = await supabase
-        .from('employees')
-        .update({ 
-          avatar_url: data.s3Key,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', employee.id);
-
-      if (updateError) {
-        throw updateError;
-      }
+      // Edge function already updated the employee record
 
       toast({
         title: 'Avatar Updated',

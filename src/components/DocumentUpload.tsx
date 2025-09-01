@@ -80,12 +80,11 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
 
       const { data, error } = await supabase.functions.invoke('upload-employee-document', {
         body: {
-          employee_id: employee.id,
-          kind,
-          file_name: file.name,
-          file_data: base64Data,
-          content_type: file.type,
-          size: file.size
+          employeeId: employee.id,
+          documentKind: kind,
+          fileName: file.name,
+          fileData: base64Data,
+          contentType: file.type
         }
       });
 
