@@ -16,6 +16,7 @@ import HRDashboard from '@/pages/HRDashboard';
 import HREmployees from '@/pages/HREmployees';
 import EmployeeProfileDetail from '@/pages/EmployeeProfileDetail';
 import EmployeesImport from '@/pages/EmployeesImport';
+import EmployeeCreate from '@/pages/EmployeeCreate';
 import EmployeeProfileManagement from '@/pages/EmployeeProfileManagement';
 import HRLeaves from '@/pages/HRLeaves';
 import HRAttendance from '@/pages/HRAttendance';
@@ -127,6 +128,14 @@ function App() {
               <ProtectedRoute requiredRole="hr">
                 <Layout>
                   <EmployeeProfileDetail />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/hr/employees/new" element={
+              <ProtectedRoute requiredRole="hr">
+                <Layout>
+                  <EmployeeCreate />
                 </Layout>
               </ProtectedRoute>
             } />
