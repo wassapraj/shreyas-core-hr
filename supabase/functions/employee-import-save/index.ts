@@ -192,7 +192,27 @@ async function processEmployee(supabase: any, employeeData: any): Promise<{ acti
 }
 
 async function generateEmpCode(supabase: any): Promise<string> {
-  // Get the highest existing WM code
+  // First, check if there are any available codes in the pool
+  const { data: poolCodes } = await supabase
+    .from('emp_code_pool')
+    .select('code')
+    .order('code', { ascending: true })
+    .limit(1);
+
+  if (poolCodes && poolCodes.length > 0) {
+    const reusedCode = poolCodes[0].code;
+    
+    // Remove the code from the pool
+    await supabase
+      .from('emp_code_pool')
+      .delete()
+      .eq('code', reusedCode);
+    
+    console.log(`Reused emp_code ${reusedCode} from pool`);
+    return reusedCode;
+  }
+
+  // If no codes in pool, generate a new one
   const { data: employees } = await supabase
     .from('employees')
     .select('emp_code')
@@ -208,20 +228,7 @@ async function generateEmpCode(supabase: any): Promise<string> {
     nextNumber = parseInt(numberPart, 10) + 1;
   }
 
-  // Check for any gaps in the sequence and reuse them
-  for (let i = 1; i < nextNumber; i++) {
-    const candidateCode = `WM${String(i).padStart(4, '0')}`;
-    const { data: existing } = await supabase
-      .from('employees')
-      .select('id')
-      .eq('emp_code', candidateCode)
-      .single();
-    
-    if (!existing) {
-      return candidateCode;
-    }
-  }
-
-  // If no gaps, use the next number
-  return `WM${String(nextNumber).padStart(4, '0')}`;
+  const newCode = `WM${String(nextNumber).padStart(4, '0')}`;
+  console.log(`Generated new emp_code ${newCode}`);
+  return newCode;
 }

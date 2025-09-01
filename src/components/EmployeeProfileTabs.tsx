@@ -34,6 +34,7 @@ import {
   Copy,
   ExternalLink
 } from 'lucide-react';
+import { AvatarUpload } from './AvatarUpload';
 
 interface EmployeeProfileTabsProps {
   employee: any;
@@ -536,6 +537,14 @@ const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({
             </div>
           </CardContent>
         </Card>
+
+        {/* Avatar Upload Section */}
+        {isHR && (
+          <AvatarUpload 
+            employee={employee} 
+            onAvatarUpdated={onEmployeeUpdate}
+          />
+        )}
 
         {/* Identity Section */}
         <Card>

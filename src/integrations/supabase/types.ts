@@ -305,6 +305,27 @@ export type Database = {
         }
         Relationships: []
       }
+      emp_code_pool: {
+        Row: {
+          code: string
+          original_employee_id: string | null
+          released_at: string
+          released_by: string | null
+        }
+        Insert: {
+          code: string
+          original_employee_id?: string | null
+          released_at?: string
+          released_by?: string | null
+        }
+        Update: {
+          code?: string
+          original_employee_id?: string | null
+          released_at?: string
+          released_by?: string | null
+        }
+        Relationships: []
+      }
       employee_documents: {
         Row: {
           created_at: string | null
@@ -390,6 +411,7 @@ export type Database = {
           aadhaar_file_path: string | null
           aadhaar_number: string | null
           alt_phone: string | null
+          avatar_url: string | null
           bank_account_name: string | null
           bank_account_number: string | null
           bank_branch: string | null
@@ -447,6 +469,9 @@ export type Database = {
           regular_photo_file_path: string | null
           regular_photo_url: string | null
           status: Database["public"]["Enums"]["employee_status"] | null
+          termination_date: string | null
+          termination_notes: string | null
+          termination_reason: string | null
           tshirt_size: string | null
           twitter: string | null
           updated_at: string | null
@@ -458,6 +483,7 @@ export type Database = {
           aadhaar_file_path?: string | null
           aadhaar_number?: string | null
           alt_phone?: string | null
+          avatar_url?: string | null
           bank_account_name?: string | null
           bank_account_number?: string | null
           bank_branch?: string | null
@@ -515,6 +541,9 @@ export type Database = {
           regular_photo_file_path?: string | null
           regular_photo_url?: string | null
           status?: Database["public"]["Enums"]["employee_status"] | null
+          termination_date?: string | null
+          termination_notes?: string | null
+          termination_reason?: string | null
           tshirt_size?: string | null
           twitter?: string | null
           updated_at?: string | null
@@ -526,6 +555,7 @@ export type Database = {
           aadhaar_file_path?: string | null
           aadhaar_number?: string | null
           alt_phone?: string | null
+          avatar_url?: string | null
           bank_account_name?: string | null
           bank_account_number?: string | null
           bank_branch?: string | null
@@ -583,6 +613,9 @@ export type Database = {
           regular_photo_file_path?: string | null
           regular_photo_url?: string | null
           status?: Database["public"]["Enums"]["employee_status"] | null
+          termination_date?: string | null
+          termination_notes?: string | null
+          termination_reason?: string | null
           tshirt_size?: string | null
           twitter?: string | null
           updated_at?: string | null

@@ -8,10 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Search, Plus, Upload, MessageCircle } from 'lucide-react';
+import { Mail, Search, Plus, Upload, MessageCircle, Trash2, Flag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EmailComposerModal } from '@/components/EmailComposerModal';
 import { SmartImportModal } from '@/components/SmartImportModal';
+import { EmployeeDeleteDialog } from '@/components/EmployeeDeleteDialog';
+import { EmployeeTerminateDialog } from '@/components/EmployeeTerminateDialog';
+import { EmployeeAvatar } from '@/components/EmployeeAvatar';
 import { createWhatsAppUrl, formatWhatsAppMessage } from '@/lib/phoneUtils';
 
 interface Employee {
@@ -24,6 +27,7 @@ interface Employee {
   department: string;
   designation: string;
   status: string;
+  avatar_url?: string;
 }
 
 const departments = [
@@ -61,6 +65,10 @@ export default function HREmployees() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showTerminateDialog, setShowTerminateDialog] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+  const [employeeToTerminate, setEmployeeToTerminate] = useState<Employee | null>(null);
 
   useEffect(() => {
     fetchEmployees();
@@ -70,9 +78,9 @@ export default function HREmployees() {
     try {
       setLoading(true);
       
-  const { data, error } = await supabase
+      const { data, error } = await supabase
         .from('employees')
-        .select('id, emp_code, first_name, last_name, email, phone, department, designation, status')
+        .select('id, emp_code, first_name, last_name, email, phone, department, designation, status, avatar_url')
         .order('emp_code');
 
       if (error) {
@@ -111,8 +119,24 @@ export default function HREmployees() {
     return matchesSearch && matchesStatus && matchesDepartment;
   });
 
-  const handleRowClick = (employeeId: string) => {
-    navigate(`/hr/employees/${employeeId}`);
+  const handleDeleteClick = (employee: Employee, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEmployeeToDelete(employee);
+    setShowDeleteDialog(true);
+  };
+
+  const handleTerminateClick = (employee: Employee, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEmployeeToTerminate(employee);
+    setShowTerminateDialog(true);
+  };
+
+  const handleRowClick = (employee: Employee) => {
+    navigate(`/hr/employees/${employee.id}`);
+  };
+
+  const handleAvatarClick = (employee: Employee) => {
+    navigate(`/hr/employees/${employee.id}`);
   };
 
   const handleEmailClick = (employee: Employee, e: React.MouseEvent) => {
@@ -199,11 +223,13 @@ export default function HREmployees() {
                 <SelectTrigger>
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
+                <SelectItem value="Terminated">Terminated</SelectItem>
+                <SelectItem value="On Hold">On Hold</SelectItem>
+              </SelectContent>
               </Select>
             </div>
 
@@ -231,8 +257,8 @@ export default function HREmployees() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Employee</TableHead>
                 <TableHead>Emp Code</TableHead>
-                <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Department</TableHead>
@@ -246,16 +272,33 @@ export default function HREmployees() {
                 <TableRow 
                   key={employee.id}
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleRowClick(employee.id)}
+                  onClick={() => handleRowClick(employee)}
                 >
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <EmployeeAvatar
+                        avatarUrl={employee.avatar_url}
+                        firstName={employee.first_name}
+                        lastName={employee.last_name}
+                        size="sm"
+                        onClick={() => handleAvatarClick(employee)}
+                      />
+                      <div>
+                        <div className="font-medium">{employee.first_name} {employee.last_name}</div>
+                      </div>
+                    </div>
+                  </TableCell>
                   <TableCell className="font-medium">{employee.emp_code}</TableCell>
-                  <TableCell>{employee.first_name} {employee.last_name}</TableCell>
                   <TableCell>{employee.email}</TableCell>
                   <TableCell>{employee.phone}</TableCell>
                   <TableCell>{employee.department}</TableCell>
                   <TableCell>{employee.designation}</TableCell>
                   <TableCell>
-                    <Badge variant={employee.status === 'Active' ? 'default' : 'secondary'}>
+                    <Badge variant={
+                      employee.status === 'Active' ? 'default' :
+                      employee.status === 'Terminated' ? 'destructive' :
+                      'secondary'
+                    }>
                       {employee.status}
                     </Badge>
                   </TableCell>
@@ -277,6 +320,25 @@ export default function HREmployees() {
                         title={employee.phone ? "Open WhatsApp chat" : "No phone number"}
                       >
                         <MessageCircle className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => handleTerminateClick(employee, e)}
+                        disabled={employee.status === 'Terminated'}
+                        title="Terminate employment"
+                        className="text-orange-600 hover:text-orange-700"
+                      >
+                        <Flag className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => handleDeleteClick(employee, e)}
+                        title="Delete employee (hard delete)"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </TableCell>
@@ -322,6 +384,26 @@ export default function HREmployees() {
       <SmartImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
+        onSuccess={fetchEmployees}
+      />
+
+      <EmployeeDeleteDialog
+        employee={employeeToDelete}
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setEmployeeToDelete(null);
+        }}
+        onSuccess={fetchEmployees}
+      />
+
+      <EmployeeTerminateDialog
+        employee={employeeToTerminate}
+        isOpen={showTerminateDialog}
+        onClose={() => {
+          setShowTerminateDialog(false);
+          setEmployeeToTerminate(null);
+        }}
         onSuccess={fetchEmployees}
       />
     </div>
