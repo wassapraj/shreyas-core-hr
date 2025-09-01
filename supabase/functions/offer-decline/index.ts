@@ -14,13 +14,13 @@ Deno.serve(async (req) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
     const { public_token, reason } = await req.json();
     
-    if (!public_token) {
-      throw new Error('public_token is required');
+    if (!public_token || typeof public_token !== 'string') {
+      throw new Error('Valid public_token is required');
     }
 
     console.log('Declining offer with token:', public_token);
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        offer: updatedOffer,
+        status: updatedOffer.status,
         message: 'Offer declined. Thank you for your time.'
       }),
       {

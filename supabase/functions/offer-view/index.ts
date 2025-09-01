@@ -43,10 +43,27 @@ Deno.serve(async (req) => {
 
     console.log('Offer found:', offer.id, 'Status:', offer.status);
 
+    // Return only necessary fields to minimize data exposure
+    const sanitizedOffer = {
+      id: offer.id,
+      candidate_name: offer.candidate_name,
+      candidate_email: offer.candidate_email,
+      candidate_phone: offer.candidate_phone,
+      job_title: offer.job_title,
+      dept: offer.dept,
+      location: offer.location,
+      ctc: offer.ctc,
+      joining_date: offer.joining_date,
+      status: offer.status,
+      offer_html: offer.offer_html,
+      attachments: offer.attachments,
+      signed_at: offer.signed_at
+    };
+
     return new Response(
       JSON.stringify({
         success: true,
-        offer: offer
+        offer: sanitizedOffer
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
