@@ -1,70 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import { Shield, Download, Plus, Trash2, Edit, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Upload, Download, Trash2, Shield, AlertCircle, Calendar } from 'lucide-react';
 
 interface InsurancePoliciesProps {
-  employeeId: string;
+  employee: any;
+  isHR: boolean;
 }
 
-const InsurancePolicies: React.FC<InsurancePoliciesProps> = ({ employeeId }) => {
+interface InsurancePolicy {
+  id: string;
+  insurer_name: string;
+  product_name: string;
+  policy_number: string;
+  start_date: string;
+  end_date: string;
+  s3_key: string;
+  insurer_logo_url?: string;
+  notes?: string;
+  created_at: string;
+}
+
+export const InsurancePolicies = ({ employee, isHR }: InsurancePoliciesProps) => {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const [policies, setPolicies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
+  const [policies, setPolicies] = useState<InsurancePolicy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploaderOpen, setUploaderOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [userRoles, setUserRoles] = useState<string[]>([]);
-  const [editingPolicy, setEditingPolicy] = useState<any>(null);
   const [uploadForm, setUploadForm] = useState({
     insurer_name: '',
     product_name: '',
     policy_number: '',
     start_date: '',
     end_date: '',
+    insurer_logo_url: '',
     notes: '',
     file: null as File | null
   });
 
-  const isHR = userRoles.includes('hr') || userRoles.includes('super_admin');
-
   useEffect(() => {
-    loadPolicies();
-    fetchUserRoles();
-  }, [employeeId]);
+    fetchPolicies();
+  }, [employee.id]);
 
-  const fetchUserRoles = async () => {
-    try {
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user?.id);
-
-      setUserRoles(data?.map(r => r.role) || []);
-    } catch (error) {
-      console.error('Error fetching user roles:', error);
-    }
-  };
-
-  const loadPolicies = async () => {
+  const fetchPolicies = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('insurance_policies')
         .select('*')
-        .eq('employee_id', employeeId)
-        .order('start_date', { ascending: false });
+        .eq('employee_id', employee.id)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setPolicies(data || []);
     } catch (error) {
-      console.error('Error loading policies:', error);
+      console.error('Error fetching insurance policies:', error);
       toast({
         title: 'Error',
         description: 'Failed to load insurance policies',
@@ -76,24 +73,43 @@ const InsurancePolicies: React.FC<InsurancePoliciesProps> = ({ employeeId }) => 
   };
 
   const handleUpload = async () => {
-    if (!uploadForm.file || !uploadForm.insurer_name || !uploadForm.product_name || !uploadForm.policy_number) return;
+    if (!uploadForm.file || !uploadForm.insurer_name || !uploadForm.product_name || !uploadForm.policy_number) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in required fields and select a file',
+        variant: 'destructive'
+      });
+      return;
+    }
 
+    setUploading(true);
     try {
-      setUploading(true);
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(uploadForm.file);
       
-      const formData = new FormData();
-      formData.append('file', uploadForm.file);
-      formData.append('employee_id', employeeId);
-      formData.append('insurer_name', uploadForm.insurer_name);
-      formData.append('product_name', uploadForm.product_name);
-      formData.append('policy_number', uploadForm.policy_number);
-      formData.append('start_date', uploadForm.start_date);
-      formData.append('end_date', uploadForm.end_date);
-      formData.append('notes', uploadForm.notes);
-      formData.append('filename', uploadForm.file.name);
+      await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+      });
 
-      const { data, error } = await supabase.functions.invoke('insurance-upload', {
-        body: formData
+      const base64Data = (reader.result as string).split(',')[1];
+
+      const { data, error } = await supabase.functions.invoke('upload-insurance-card', {
+        body: {
+          employee_id: employee.id,
+          insurer_name: uploadForm.insurer_name,
+          product_name: uploadForm.product_name,
+          policy_number: uploadForm.policy_number,
+          start_date: uploadForm.start_date,
+          end_date: uploadForm.end_date,
+          file_name: uploadForm.file.name,
+          file_data: base64Data,
+          content_type: uploadForm.file.type,
+          size: uploadForm.file.size,
+          insurer_logo_url: uploadForm.insurer_logo_url || null,
+          notes: uploadForm.notes || null
+        }
       });
 
       if (error) throw error;
@@ -103,11 +119,20 @@ const InsurancePolicies: React.FC<InsurancePoliciesProps> = ({ employeeId }) => 
         description: 'Insurance policy uploaded successfully'
       });
 
-      resetForm();
-      loadPolicies();
-
+      setUploaderOpen(false);
+      setUploadForm({
+        insurer_name: '',
+        product_name: '',
+        policy_number: '',
+        start_date: '',
+        end_date: '',
+        insurer_logo_url: '',
+        notes: '',
+        file: null
+      });
+      fetchPolicies();
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Error uploading insurance policy:', error);
       toast({
         title: 'Error',
         description: 'Failed to upload insurance policy',
@@ -118,36 +143,16 @@ const InsurancePolicies: React.FC<InsurancePoliciesProps> = ({ employeeId }) => 
     }
   };
 
-  const resetForm = () => {
-    setUploadForm({
-      insurer_name: '',
-      product_name: '',
-      policy_number: '',
-      start_date: '',
-      end_date: '',
-      notes: '',
-      file: null
-    });
-    setShowUpload(false);
-    setEditingPolicy(null);
-  };
-
-  const handleDownload = async (policy: any) => {
+  const handleDownload = async (policy: InsurancePolicy) => {
     try {
       const { data, error } = await supabase.functions.invoke('get-signed-url', {
-        body: {
-          bucket: 'insurance',
-          path: policy.file_path
-        }
+        body: { key: policy.s3_key }
       });
 
       if (error) throw error;
-
-      if (data?.signedUrl) {
-        window.open(data.signedUrl, '_blank');
-      }
+      window.open(data.signedUrl, '_blank');
     } catch (error) {
-      console.error('Download error:', error);
+      console.error('Error downloading policy:', error);
       toast({
         title: 'Error',
         description: 'Failed to download policy document',
@@ -156,194 +161,212 @@ const InsurancePolicies: React.FC<InsurancePoliciesProps> = ({ employeeId }) => 
     }
   };
 
-  const handleDelete = async (policyId: string) => {
-    if (!confirm('Are you sure you want to delete this insurance policy?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('insurance_policies')
-        .delete()
-        .eq('id', policyId);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Success',
-        description: 'Insurance policy deleted successfully'
-      });
-
-      loadPolicies();
-    } catch (error) {
-      console.error('Delete error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete insurance policy',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'Not specified';
-    return new Date(dateString).toLocaleDateString();
+  const isExpiringSoon = (endDate: string) => {
+    const expiry = new Date(endDate);
+    const today = new Date();
+    const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
   };
 
   const isExpired = (endDate: string) => {
-    if (!endDate) return false;
     return new Date(endDate) < new Date();
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="animate-pulse bg-gray-200 rounded h-32"></div>
+        <div className="animate-pulse bg-gray-200 rounded h-64"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h4 className="font-medium">Insurance Policies</h4>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Insurance Policies</h3>
         {isHR && (
-          <Button onClick={() => setShowUpload(true)} size="sm">
-            <Plus className="h-3 w-3 mr-1" />
-            Add Policy
-          </Button>
+          <Dialog open={uploaderOpen} onOpenChange={setUploaderOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Upload className="w-4 h-4 mr-2" />
+                Add Policy Card
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add Insurance Policy</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Insurer Name *</Label>
+                  <Input
+                    value={uploadForm.insurer_name}
+                    onChange={(e) => setUploadForm(prev => ({ ...prev, insurer_name: e.target.value }))}
+                    placeholder="e.g., HDFC ERGO, ICICI Lombard"
+                  />
+                </div>
+
+                <div>
+                  <Label>Product Name *</Label>
+                  <Input
+                    value={uploadForm.product_name}
+                    onChange={(e) => setUploadForm(prev => ({ ...prev, product_name: e.target.value }))}
+                    placeholder="e.g., Health Insurance, Life Insurance"
+                  />
+                </div>
+
+                <div>
+                  <Label>Policy Number *</Label>
+                  <Input
+                    value={uploadForm.policy_number}
+                    onChange={(e) => setUploadForm(prev => ({ ...prev, policy_number: e.target.value }))}
+                    placeholder="Policy number"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Start Date</Label>
+                    <Input
+                      type="date"
+                      value={uploadForm.start_date}
+                      onChange={(e) => setUploadForm(prev => ({ ...prev, start_date: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>End Date</Label>
+                    <Input
+                      type="date"
+                      value={uploadForm.end_date}
+                      onChange={(e) => setUploadForm(prev => ({ ...prev, end_date: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Insurer Logo URL (Optional)</Label>
+                  <Input
+                    value={uploadForm.insurer_logo_url}
+                    onChange={(e) => setUploadForm(prev => ({ ...prev, insurer_logo_url: e.target.value }))}
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div>
+                  <Label>Notes (Optional)</Label>
+                  <Textarea
+                    value={uploadForm.notes}
+                    onChange={(e) => setUploadForm(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Additional notes..."
+                    rows={2}
+                  />
+                </div>
+
+                <div>
+                  <Label>Policy Document *</Label>
+                  <Input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => setUploadForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
+                  />
+                </div>
+
+                <Button onClick={handleUpload} disabled={uploading} className="w-full">
+                  {uploading ? 'Uploading...' : 'Add Policy'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin" />
-        </div>
-      ) : policies.length === 0 ? (
-        <p className="text-muted-foreground text-center py-4">
-          No insurance policies found
-        </p>
-      ) : (
-        <div className="grid gap-4">
-          {policies.map((policy) => (
-            <div key={policy.id} className="border rounded-lg p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <Shield className="h-8 w-8 text-blue-600" />
-                  <div>
-                    <h5 className="font-medium">{policy.insurer_name}</h5>
-                    <p className="text-sm text-muted-foreground">{policy.product_name}</p>
-                    <p className="text-xs text-muted-foreground">Policy: {policy.policy_number}</p>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  {policy.file_path && (
-                    <Button size="sm" variant="outline" onClick={() => handleDownload(policy)}>
-                      <Download className="h-3 w-3" />
-                    </Button>
-                  )}
-                  {isHR && (
-                    <>
-                      <Button size="sm" variant="outline" onClick={() => setEditingPolicy(policy)}>
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleDelete(policy.id)}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
-                <span>Start: {formatDate(policy.start_date)}</span>
-                <span className={isExpired(policy.end_date) ? 'text-red-600' : ''}>
-                  End: {formatDate(policy.end_date)}
-                  {isExpired(policy.end_date) && ' (Expired)'}
-                </span>
-              </div>
-              {policy.notes && (
-                <p className="text-sm text-muted-foreground mt-2">{policy.notes}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      {policies.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {policies.map(policy => {
+            const expired = isExpired(policy.end_date);
+            const expiringSoon = !expired && isExpiringSoon(policy.end_date);
 
-      <Dialog open={showUpload} onOpenChange={setShowUpload}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Insurance Policy</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Insurer Name</Label>
-              <Input
-                value={uploadForm.insurer_name}
-                onChange={(e) => setUploadForm(prev => ({ ...prev, insurer_name: e.target.value }))}
-                placeholder="e.g., HDFC ERGO, Star Health"
-              />
-            </div>
-            <div>
-              <Label>Product Name</Label>
-              <Input
-                value={uploadForm.product_name}
-                onChange={(e) => setUploadForm(prev => ({ ...prev, product_name: e.target.value }))}
-                placeholder="e.g., Health Insurance, Group Medical"
-              />
-            </div>
-            <div>
-              <Label>Policy Number</Label>
-              <Input
-                value={uploadForm.policy_number}
-                onChange={(e) => setUploadForm(prev => ({ ...prev, policy_number: e.target.value }))}
-                placeholder="Policy number"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label>Start Date</Label>
-                <Input
-                  type="date"
-                  value={uploadForm.start_date}
-                  onChange={(e) => setUploadForm(prev => ({ ...prev, start_date: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label>End Date</Label>
-                <Input
-                  type="date"
-                  value={uploadForm.end_date}
-                  onChange={(e) => setUploadForm(prev => ({ ...prev, end_date: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div>
-              <Label>Notes</Label>
-              <Textarea
-                value={uploadForm.notes}
-                onChange={(e) => setUploadForm(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Additional notes"
-                rows={2}
-              />
-            </div>
-            <div>
-              <Label>Policy Card/Document</Label>
-              <Input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => setUploadForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleUpload} 
-                disabled={!uploadForm.file || !uploadForm.insurer_name || !uploadForm.product_name || !uploadForm.policy_number || uploading}
-                className="flex-1"
-              >
-                {uploading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Shield className="h-4 w-4 mr-2" />
-                )}
-                Add Policy
-              </Button>
-              <Button variant="outline" onClick={resetForm}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+            return (
+              <Card key={policy.id} className={`${expired ? 'border-destructive' : expiringSoon ? 'border-warning' : ''}`}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      {policy.insurer_logo_url ? (
+                        <img 
+                          src={policy.insurer_logo_url} 
+                          alt={policy.insurer_name}
+                          className="w-8 h-8 object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <Shield className="w-8 h-8 text-primary" />
+                      )}
+                      <div>
+                        <CardTitle className="text-sm">{policy.product_name}</CardTitle>
+                        <p className="text-xs text-muted-foreground">{policy.insurer_name}</p>
+                      </div>
+                    </div>
+                    {expired && <Badge variant="destructive">Expired</Badge>}
+                    {expiringSoon && <Badge variant="destructive">Expiring Soon</Badge>}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Label className="text-xs">Policy Number</Label>
+                    <p className="text-sm font-mono">{policy.policy_number}</p>
+                  </div>
+
+                  {(policy.start_date || policy.end_date) && (
+                    <div>
+                      <Label className="text-xs">Validity</Label>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Calendar className="w-3 h-3" />
+                        {policy.start_date && new Date(policy.start_date).toLocaleDateString()}
+                        {policy.start_date && policy.end_date && ' → '}
+                        {policy.end_date && new Date(policy.end_date).toLocaleDateString()}
+                      </div>
+                    </div>
+                  )}
+
+                  {policy.notes && (
+                    <div>
+                      <Label className="text-xs">Notes</Label>
+                      <p className="text-sm text-muted-foreground">{policy.notes}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDownload(policy)}
+                      className="flex-1"
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      View Card
+                    </Button>
+                    {isHR && (
+                      <Button size="sm" variant="destructive">
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">No insurance policies on file</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

@@ -22,23 +22,23 @@ serve(async (req) => {
       },
     })
 
-    const { bucket, path, expiresIn = 60 * 60 * 24 * 7 } = await req.json()
+    const { key, expiresIn = 3600 } = await req.json()
 
-    if (!path) {
+    if (!key) {
       return new Response(
-        JSON.stringify({ error: 'Missing path' }),
+        JSON.stringify({ error: 'Missing key parameter' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('Generating signed URL for:', path)
+    console.log('Generating signed URL for:', key)
 
     const bucketName = Deno.env.get('AWS_S3_BUCKET') ?? ''
     
     // Generate signed URL for S3 object
     const getCommand = new GetObjectCommand({
       Bucket: bucketName,
-      Key: path, // path already includes the folder structure from upload functions
+      Key: key,
     })
 
     const signedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn })

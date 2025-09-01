@@ -409,6 +409,7 @@ export type Database = {
       employees: {
         Row: {
           aadhaar_file_path: string | null
+          aadhaar_key: string | null
           aadhaar_number: string | null
           alt_phone: string | null
           avatar_url: string | null
@@ -451,8 +452,10 @@ export type Database = {
           open_box_notes: string | null
           other_social: string | null
           pan_file_path: string | null
+          pan_key: string | null
           pan_number: string | null
           passport_photo_file_path: string | null
+          passport_photo_key: string | null
           passport_photo_url: string | null
           permanent_address: string | null
           personal_vision: string | null
@@ -461,12 +464,15 @@ export type Database = {
           pf_portal_user: string | null
           phone: string | null
           photo_file_path: string | null
+          photo_key: string | null
           photo_url: string | null
           pt_state: Database["public"]["Enums"]["pt_state"] | null
           qualification: string | null
           qualification_file_path: string | null
+          qualification_key: string | null
           qualification_proof_url: string | null
           regular_photo_file_path: string | null
+          regular_photo_key: string | null
           regular_photo_url: string | null
           status: Database["public"]["Enums"]["employee_status"] | null
           termination_date: string | null
@@ -481,6 +487,7 @@ export type Database = {
         }
         Insert: {
           aadhaar_file_path?: string | null
+          aadhaar_key?: string | null
           aadhaar_number?: string | null
           alt_phone?: string | null
           avatar_url?: string | null
@@ -523,8 +530,10 @@ export type Database = {
           open_box_notes?: string | null
           other_social?: string | null
           pan_file_path?: string | null
+          pan_key?: string | null
           pan_number?: string | null
           passport_photo_file_path?: string | null
+          passport_photo_key?: string | null
           passport_photo_url?: string | null
           permanent_address?: string | null
           personal_vision?: string | null
@@ -533,12 +542,15 @@ export type Database = {
           pf_portal_user?: string | null
           phone?: string | null
           photo_file_path?: string | null
+          photo_key?: string | null
           photo_url?: string | null
           pt_state?: Database["public"]["Enums"]["pt_state"] | null
           qualification?: string | null
           qualification_file_path?: string | null
+          qualification_key?: string | null
           qualification_proof_url?: string | null
           regular_photo_file_path?: string | null
+          regular_photo_key?: string | null
           regular_photo_url?: string | null
           status?: Database["public"]["Enums"]["employee_status"] | null
           termination_date?: string | null
@@ -553,6 +565,7 @@ export type Database = {
         }
         Update: {
           aadhaar_file_path?: string | null
+          aadhaar_key?: string | null
           aadhaar_number?: string | null
           alt_phone?: string | null
           avatar_url?: string | null
@@ -595,8 +608,10 @@ export type Database = {
           open_box_notes?: string | null
           other_social?: string | null
           pan_file_path?: string | null
+          pan_key?: string | null
           pan_number?: string | null
           passport_photo_file_path?: string | null
+          passport_photo_key?: string | null
           passport_photo_url?: string | null
           permanent_address?: string | null
           personal_vision?: string | null
@@ -605,12 +620,15 @@ export type Database = {
           pf_portal_user?: string | null
           phone?: string | null
           photo_file_path?: string | null
+          photo_key?: string | null
           photo_url?: string | null
           pt_state?: Database["public"]["Enums"]["pt_state"] | null
           qualification?: string | null
           qualification_file_path?: string | null
+          qualification_key?: string | null
           qualification_proof_url?: string | null
           regular_photo_file_path?: string | null
+          regular_photo_key?: string | null
           regular_photo_url?: string | null
           status?: Database["public"]["Enums"]["employee_status"] | null
           termination_date?: string | null
@@ -677,6 +695,7 @@ export type Database = {
       insurance_policies: {
         Row: {
           card_image_url: string | null
+          content_type: string | null
           created_at: string | null
           employee_id: string
           end_date: string | null
@@ -687,12 +706,15 @@ export type Database = {
           notes: string | null
           policy_number: string | null
           product_name: string | null
+          s3_key: string | null
           signed_url: string | null
+          size: number | null
           start_date: string | null
           updated_at: string | null
         }
         Insert: {
           card_image_url?: string | null
+          content_type?: string | null
           created_at?: string | null
           employee_id: string
           end_date?: string | null
@@ -703,12 +725,15 @@ export type Database = {
           notes?: string | null
           policy_number?: string | null
           product_name?: string | null
+          s3_key?: string | null
           signed_url?: string | null
+          size?: number | null
           start_date?: string | null
           updated_at?: string | null
         }
         Update: {
           card_image_url?: string | null
+          content_type?: string | null
           created_at?: string | null
           employee_id?: string
           end_date?: string | null
@@ -719,7 +744,9 @@ export type Database = {
           notes?: string | null
           policy_number?: string | null
           product_name?: string | null
+          s3_key?: string | null
           signed_url?: string | null
+          size?: number | null
           start_date?: string | null
           updated_at?: string | null
         }
@@ -1009,6 +1036,7 @@ export type Database = {
       }
       payslips: {
         Row: {
+          content_type: string | null
           created_at: string | null
           deductions: number | null
           employee_id: string
@@ -1020,12 +1048,15 @@ export type Database = {
           pdf_url: string | null
           remarks: string | null
           run_id: string | null
+          s3_key: string | null
           signed_url: string | null
+          size: number | null
           updated_at: string | null
           visible_to_employee: boolean
           year: number
         }
         Insert: {
+          content_type?: string | null
           created_at?: string | null
           deductions?: number | null
           employee_id: string
@@ -1037,12 +1068,15 @@ export type Database = {
           pdf_url?: string | null
           remarks?: string | null
           run_id?: string | null
+          s3_key?: string | null
           signed_url?: string | null
+          size?: number | null
           updated_at?: string | null
           visible_to_employee?: boolean
           year: number
         }
         Update: {
+          content_type?: string | null
           created_at?: string | null
           deductions?: number | null
           employee_id?: string
@@ -1054,7 +1088,9 @@ export type Database = {
           pdf_url?: string | null
           remarks?: string | null
           run_id?: string | null
+          s3_key?: string | null
           signed_url?: string | null
+          size?: number | null
           updated_at?: string | null
           visible_to_employee?: boolean
           year?: number
