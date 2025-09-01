@@ -47,15 +47,26 @@ export const AvatarUpload = ({ employee, onAvatarUpdated }: AvatarUploadProps) =
     setIsUploading(true);
 
     try {
-      // Upload to S3 via edge function
-      const { data, error } = await supabase.functions.invoke('supabase-upload', {
+      // Convert file to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]); // Remove data:image/jpeg;base64, prefix
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(file);
+      const base64Data = await base64Promise;
+
+      // Upload via upload-employee-document function
+      const { data, error } = await supabase.functions.invoke('upload-employee-document', {
         body: {
-          fileName: `avatar.${file.type.split('/')[1]}`,
-          fileType: file.type,
-          fileSize: file.size,
           employeeId: employee.id,
-          documentType: 'avatar',
-          fileData: await file.arrayBuffer()
+          documentKind: 'avatar',
+          fileName: `avatar.${file.type.split('/')[1]}`,
+          fileData: base64Data,
+          contentType: file.type
         }
       });
 

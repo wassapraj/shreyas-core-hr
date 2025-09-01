@@ -79,8 +79,12 @@ const EmployeeCreate = () => {
       return 'WM0001';
     }
 
-    const lastCode = employees[0].emp_code;
-    const match = lastCode.match(/WM(\d+)/);
+    const lastCode = employees[0]?.emp_code;
+    if (!lastCode) {
+      return 'WM0001';
+    }
+
+    const match = lastCode.match(/WM(\d{4})/);
     if (match) {
       const nextNumber = parseInt(match[1]) + 1;
       return `WM${nextNumber.toString().padStart(4, '0')}`;

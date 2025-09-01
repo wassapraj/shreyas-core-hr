@@ -49,7 +49,7 @@ export const EmployeeAvatar = ({
     
     try {
       const { data, error } = await supabase.functions.invoke('get-signed-url', {
-        body: { filePath: avatarUrl }
+        body: { key: avatarUrl }
       });
 
       if (error) {

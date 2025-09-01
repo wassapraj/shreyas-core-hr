@@ -100,14 +100,25 @@ export const EmployeeTerminateDialog = ({ employee, isOpen, onClose, onSuccess }
       if (selectedFile) {
         setIsUploading(true);
         
-        const { data: uploadData, error: uploadError } = await supabase.functions.invoke('supabase-upload', {
+        // Convert file to base64
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1]); // Remove data:image/jpeg;base64, prefix
+          };
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(selectedFile);
+        const base64Data = await base64Promise;
+
+        const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-employee-document', {
           body: {
-            fileName: selectedFile.name,
-            fileType: selectedFile.type,
-            fileSize: selectedFile.size,
             employeeId: employee.id,
-            documentType: 'termination_letter',
-            fileData: await selectedFile.arrayBuffer()
+            documentKind: 'termination_letter',
+            fileName: selectedFile.name,
+            fileData: base64Data,
+            contentType: selectedFile.type
           }
         });
 

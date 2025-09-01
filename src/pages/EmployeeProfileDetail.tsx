@@ -80,13 +80,7 @@ const EmployeeProfileDetail = () => {
         throw new Error('Employee not found');
       }
 
-      // Check if user can view this employee
-      const isHR = userRoles.includes('hr') || userRoles.includes('super_admin');
-      const isOwnProfile = data.user_id === user?.id;
-
-      if (!isHR && !isOwnProfile) {
-        throw new Error('Unauthorized to view this profile');
-      }
+      // Authorization will be handled by RLS policies at the database level
 
       setEmployee(data);
     } catch (error) {
