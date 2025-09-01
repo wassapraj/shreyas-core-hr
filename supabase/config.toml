@@ -36,6 +36,9 @@ verify_jwt = true
 [functions.offer-issue]
 verify_jwt = true
 
+[functions.offer-view]
+verify_jwt = false
+
 [functions.payroll-compute]
 verify_jwt = true
 

@@ -56,14 +56,17 @@ const CandidateOfferView = () => {
   const fetchOffer = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('offers')
-        .select('*')
-        .eq('public_token', token)
-        .single();
+      const { data, error } = await supabase.functions.invoke('offer-view', {
+        body: { public_token: token }
+      });
 
       if (error) throw error;
-      setOffer(data);
+
+      if (data.success) {
+        setOffer(data.offer);
+      } else {
+        throw new Error(data.error);
+      }
     } catch (error: any) {
       toast({
         title: 'Error',
