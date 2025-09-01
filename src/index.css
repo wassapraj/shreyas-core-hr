@@ -205,6 +205,15 @@ All colors MUST be HSL.
     background-color: hsl(var(--muted));
     border-radius: 3px;
   }
+
+  /* Custom avatar size for 72px */
+  .w-18 {
+    width: 4.5rem; /* 72px */
+  }
+  
+  .h-18 {
+    height: 4.5rem; /* 72px */
+  }
 }
 
 @keyframes slideUp {
