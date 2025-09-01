@@ -343,6 +343,48 @@ export type Database = {
           },
         ]
       }
+      employee_imports: {
+        Row: {
+          created_at: string
+          file_key: string
+          file_name: string
+          file_size: number
+          id: string
+          mime_type: string
+          processed_at: string | null
+          result_json: Json | null
+          status: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_key: string
+          file_name: string
+          file_size: number
+          id?: string
+          mime_type: string
+          processed_at?: string | null
+          result_json?: Json | null
+          status?: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_key?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          processed_at?: string | null
+          result_json?: Json | null
+          status?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           aadhaar_file_path: string | null

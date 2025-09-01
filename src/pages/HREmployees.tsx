@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Mail, Search, Plus, Upload, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EmailComposerModal } from '@/components/EmailComposerModal';
+import { SmartImportModal } from '@/components/SmartImportModal';
 import { createWhatsAppUrl, formatWhatsAppMessage } from '@/lib/phoneUtils';
 
 interface Employee {
@@ -59,6 +60,7 @@ export default function HREmployees() {
   const [brandFilter, setBrandFilter] = useState('all');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
@@ -166,9 +168,9 @@ export default function HREmployees() {
             <Plus className="w-4 h-4 mr-2" />
             Add Employee
           </Button>
-          <Button onClick={() => navigate('/hr/employees/import')} variant="outline">
+          <Button onClick={() => setShowImportModal(true)} variant="outline">
             <Upload className="w-4 h-4 mr-2" />
-            Import CSV
+            Import Employees
           </Button>
         </div>
       </div>
@@ -292,7 +294,7 @@ export default function HREmployees() {
                   <Plus className="w-4 h-4 mr-2" />
                   Add Employee
                 </Button>
-                <Button onClick={() => navigate('/hr/employees/import')} variant="outline">
+                <Button onClick={() => setShowImportModal(true)} variant="outline">
                   <Upload className="w-4 h-4 mr-2" />
                   Import Employees
                 </Button>
@@ -315,6 +317,12 @@ export default function HREmployees() {
           setShowEmailModal(false);
           setSelectedEmployee(null);
         }}
+      />
+
+      <SmartImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={fetchEmployees}
       />
     </div>
   );
