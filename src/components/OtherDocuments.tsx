@@ -93,8 +93,7 @@ const OtherDocuments: React.FC<OtherDocumentsProps> = ({ employeeId }) => {
     try {
       const { data, error } = await supabase.functions.invoke('get-signed-url', {
         body: {
-          bucket: 'documents',
-          path: document.file_path
+          key: document.file_path || document.s3_key
         }
       });
 

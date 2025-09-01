@@ -38,24 +38,47 @@ const EmployeeProfileDetail = () => {
     }
   };
 
+  const resolveEmployee = async (identifier: string) => {
+    // First try by emp_code (WM pattern)
+    if (/^WM\d{4}$/i.test(identifier)) {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('emp_code', identifier)
+        .maybeSingle();
+      
+      if (!error && data) return data;
+    }
+    
+    // Try by UUID
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('id', identifier)
+      .maybeSingle();
+      
+    if (!error && data) return data;
+    
+    return null;
+  };
+
   const fetchEmployee = async () => {
     try {
       setLoading(true);
-      let query = supabase.from('employees').select('*');
       
-      // Support routing by emp_code via query parameter
+      // Support routing by emp_code via query parameter or direct id
       const empCode = searchParams.get('code');
-      if (empCode) {
-        query = query.eq('emp_code', empCode);
-      } else if (id) {
-        query = query.eq('id', id);
-      } else {
+      const identifier = empCode || id;
+      
+      if (!identifier) {
         throw new Error('No employee identifier provided');
       }
 
-      const { data, error } = await query.single();
+      const data = await resolveEmployee(identifier);
 
-      if (error) throw error;
+      if (!data) {
+        throw new Error('Employee not found');
+      }
 
       // Check if user can view this employee
       const isHR = userRoles.includes('hr') || userRoles.includes('super_admin');

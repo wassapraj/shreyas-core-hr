@@ -116,7 +116,10 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
   const handleDownload = async (s3Key: string, filename: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('get-signed-url', {
-        body: { key: s3Key }
+        body: { 
+          key: s3Key,
+          bucket: 'documents'
+        }
       });
 
       if (error) throw error;

@@ -62,30 +62,31 @@ const EmployeeCreate = () => {
       return poolCode.code;
     }
 
-    // Generate new code by finding max emp_code
+    // Generate new WM code by finding max emp_code
     const { data: employees, error } = await supabase
       .from('employees')
       .select('emp_code')
+      .ilike('emp_code', 'WM%')
       .order('emp_code', { ascending: false })
       .limit(1);
 
     if (error) {
       console.error('Error fetching emp_code:', error);
-      return 'EMP001';
+      return 'WM0001';
     }
 
     if (!employees || employees.length === 0) {
-      return 'EMP001';
+      return 'WM0001';
     }
 
     const lastCode = employees[0].emp_code;
-    const match = lastCode.match(/EMP(\d+)/);
+    const match = lastCode.match(/WM(\d+)/);
     if (match) {
       const nextNumber = parseInt(match[1]) + 1;
-      return `EMP${nextNumber.toString().padStart(3, '0')}`;
+      return `WM${nextNumber.toString().padStart(4, '0')}`;
     }
 
-    return 'EMP001';
+    return 'WM0001';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
