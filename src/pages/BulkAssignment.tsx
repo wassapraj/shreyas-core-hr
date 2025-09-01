@@ -202,222 +202,221 @@ const BulkAssignment = () => {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Users className="w-6 h-6" />
-              Bulk Brand & Department Assignment
-            </h1>
-            <p className="text-muted-foreground">
-              Assign brands and departments to multiple employees at once
-            </p>
-          </div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Users className="w-6 h-6" />
+            Bulk Brand & Department Assignment
+          </h1>
+          <p className="text-muted-foreground">
+            Assign brands and departments to multiple employees at once
+          </p>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Search */}
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+          <Input
+            placeholder="Search employees..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
         </div>
 
-        {/* Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
-            <Input
-              placeholder="Search employees..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+        {/* Filter */}
+        <Select value={selectedFilter} onValueChange={(value: any) => setSelectedFilter(value)}>
+          <SelectTrigger>
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all_active">All Active Employees</SelectItem>
+            <SelectItem value="missing_brand">Missing Brand</SelectItem>
+            <SelectItem value="missing_department">Missing Department</SelectItem>
+          </SelectContent>
+        </Select>
 
-          {/* Filter */}
-          <Select value={selectedFilter} onValueChange={(value: any) => setSelectedFilter(value)}>
-            <SelectTrigger>
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all_active">All Active Employees</SelectItem>
-              <SelectItem value="missing_brand">Missing Brand</SelectItem>
-              <SelectItem value="missing_department">Missing Department</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Bulk Brand */}
+        <Select value={bulkBrand} onValueChange={setBulkBrand}>
+          <SelectTrigger>
+            <Tag className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Select Brand" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">— No Change —</SelectItem>
+            {BRANDS.map(brand => (
+              <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          {/* Bulk Brand */}
-          <Select value={bulkBrand} onValueChange={setBulkBrand}>
-            <SelectTrigger>
-              <Tag className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Select Brand" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">— No Change —</SelectItem>
-              {BRANDS.map(brand => (
-                <SelectItem key={brand} value={brand}>{brand}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Bulk Department */}
+        <Select value={bulkDepartment} onValueChange={setBulkDepartment}>
+          <SelectTrigger>
+            <Building className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Select Department" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">— No Change —</SelectItem>
+            {DEPARTMENTS.map(dept => (
+              <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-          {/* Bulk Department */}
-          <Select value={bulkDepartment} onValueChange={setBulkDepartment}>
-            <SelectTrigger>
-              <Building className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Select Department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">— No Change —</SelectItem>
-              {DEPARTMENTS.map(dept => (
-                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Bulk Actions */}
-        {selectedEmployees.length > 0 && (
-          <Card className="border-primary">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-primary" />
-                  <span className="font-medium">
-                    {selectedEmployees.length} employee(s) selected
-                  </span>
-                </div>
-                <Button 
-                  onClick={handleBulkAssignment} 
-                  disabled={saving || (!bulkBrand && !bulkDepartment)}
-                >
-                  {saving ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4 mr-2" />
-                  )}
-                  Apply Changes
-                </Button>
+      {/* Bulk Actions */}
+      {selectedEmployees.length > 0 && (
+        <Card className="border-primary">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-primary" />
+                <span className="font-medium">
+                  {selectedEmployees.length} employee(s) selected
+                </span>
               </div>
-              {(bulkBrand || bulkDepartment) && (
-                <div className="mt-2 text-sm text-muted-foreground">
-                  Will assign: {bulkBrand && `Brand: ${bulkBrand}`} {bulkBrand && bulkDepartment && ' • '} {bulkDepartment && `Department: ${bulkDepartment}`}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Employee List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Employee List ({employees.length})</span>
-              <div className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin" />
-              </div>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={allSelected}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Brand</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {employees.map((employee) => (
-                      <TableRow key={employee.id}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedEmployees.includes(employee.id)}
-                            onCheckedChange={(checked) => handleSelectEmployee(employee.id, checked as boolean)}
-                            disabled={employee.status === 'Terminated'}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">
-                              {employee.first_name} {employee.last_name}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {employee.emp_code}
-                        </TableCell>
-                        <TableCell>{employee.email}</TableCell>
-                        <TableCell>
-                          {employee.brand ? (
-                            <Badge variant="secondary">{employee.brand}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3" />
-                              Not Set
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {employee.department ? (
-                            <Badge variant="outline">{employee.department}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3" />
-                              Not Set
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={employee.status === 'Active' ? 'default' : 'destructive'}>
-                            {employee.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="text-sm text-muted-foreground">
-                      Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, employees.length)} of {employees.length} employees
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
+              <Button 
+                onClick={handleBulkAssignment} 
+                disabled={saving || (!bulkBrand && !bulkDepartment)}
+              >
+                {saving ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
                 )}
-              </>
+                Apply Changes
+              </Button>
+            </div>
+            {(bulkBrand || bulkDepartment) && (
+              <div className="mt-2 text-sm text-muted-foreground">
+                Will assign: {bulkBrand && `Brand: ${bulkBrand}`} {bulkBrand && bulkDepartment && ' • '} {bulkDepartment && `Department: ${bulkDepartment}`}
+              </div>
             )}
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      {/* Employee List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Employee List ({employees.length})</span>
+            <div className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin" />
+            </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={allSelected}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Brand</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {employees.map((employee) => (
+                    <TableRow key={employee.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedEmployees.includes(employee.id)}
+                          onCheckedChange={(checked) => handleSelectEmployee(employee.id, checked as boolean)}
+                          disabled={employee.status === 'Terminated'}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">
+                            {employee.first_name} {employee.last_name}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {employee.emp_code}
+                      </TableCell>
+                      <TableCell>{employee.email}</TableCell>
+                      <TableCell>
+                        {employee.brand ? (
+                          <Badge variant="secondary">{employee.brand}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Not Set
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {employee.department ? (
+                          <Badge variant="outline">{employee.department}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            Not Set
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={employee.status === 'Active' ? 'default' : 'destructive'}>
+                          {employee.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, employees.length)} of {employees.length} employees
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
