@@ -20,7 +20,7 @@ import {
   CheckCircle,
   AlertCircle 
 } from 'lucide-react';
-import Layout from '@/components/Layout';
+
 
 interface Employee {
   id: string;
@@ -201,8 +201,7 @@ const BulkAssignment = () => {
   const someSelected = selectedEmployees.length > 0 && selectedEmployees.length < selectableEmployees.length;
 
   return (
-    <Layout>
-      <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -419,7 +418,7 @@ const BulkAssignment = () => {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </div>
   );
 };
 
