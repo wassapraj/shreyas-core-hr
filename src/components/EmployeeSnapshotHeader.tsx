@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Mail, MessageCircle, Phone, Calendar, DollarSign, Calendar as CalendarIcon } from 'lucide-react';
 import { createWhatsAppUrl, toE164 } from '@/lib/phoneUtils';
 import { EmployeeAvatar } from './EmployeeAvatar';
@@ -56,6 +57,7 @@ interface Employee {
 }
 
 const EmployeeSnapshotHeader = ({ employeeId, isHR = false, isSelfView = false }: EmployeeSnapshotHeaderProps) => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const [snapshot, setSnapshot] = useState<SnapshotData | null>(null);
@@ -245,12 +247,12 @@ const EmployeeSnapshotHeader = ({ employeeId, isHR = false, isSelfView = false }
                 lastName={employee.last_name}
                 size="lg"
                 className="w-18 h-18 text-lg"
-                onClick={() => window.location.href = `/hr/employees/${employeeId}`}
+                onClick={() => navigate(`/hr/employees/${employeeId}`)}
               />
               {(isHR && !isSelfView) && (
                 <button 
                   className="text-xs text-primary hover:underline mt-1 block"
-                  onClick={() => window.location.href = `/hr/employees/${employeeId}`}
+                  onClick={() => navigate(`/hr/employees/${employeeId}`)}
                 >
                   Change photo
                 </button>

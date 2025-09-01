@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { Shield, AlertTriangle, Users, Database, CheckCircle, AlertCircle } from 'lucide-react';
 
 const AdminSetup = () => {
@@ -10,6 +11,7 @@ const AdminSetup = () => {
   const [setupComplete, setSetupComplete] = useState(false);
   const [results, setResults] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const seedInitialUsers = async () => {
     setIsLoading(true);
@@ -168,7 +170,7 @@ const AdminSetup = () => {
           <div className="text-center">
             <Button 
               size="lg"
-              onClick={() => window.location.href = '/auth'}
+              onClick={() => navigate('/auth')}
             >
               Go to Login Page
             </Button>
@@ -251,8 +253,8 @@ const AdminSetup = () => {
         </Card>
 
         <div className="text-center">
-          <Button variant="outline" asChild>
-            <a href="/auth">Go to Login Page</a>
+          <Button variant="outline" onClick={() => navigate('/auth')}>
+            Go to Login Page
           </Button>
         </div>
       </div>

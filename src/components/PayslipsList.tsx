@@ -105,18 +105,19 @@ export const PayslipsList = ({ employee, isHR }: PayslipsListProps) => {
 
       const { data, error } = await supabase.functions.invoke('upload-payslip', {
         body: {
-          employee_id: employee.id,
-          month: uploadForm.month,
-          year: uploadForm.year,
-          file_name: uploadForm.file.name,
-          file_data: base64Data,
-          content_type: uploadForm.file.type,
-          size: uploadForm.file.size,
-          gross: parseFloat(uploadForm.gross) || 0,
-          deductions: parseFloat(uploadForm.deductions) || 0,
-          net: parseFloat(uploadForm.net) || 0,
-          remarks: uploadForm.remarks,
-          visible_to_employee: uploadForm.visible_to_employee
+          employeeId: employee.id,
+          fileName: `payslip_${uploadForm.month}_${uploadForm.year}_${uploadForm.file.name}`,
+          fileData: base64Data,
+          contentType: uploadForm.file.type,
+          metadata: {
+            month: uploadForm.month,
+            year: uploadForm.year,
+            gross: parseFloat(uploadForm.gross) || 0,
+            deductions: parseFloat(uploadForm.deductions) || 0,
+            net: parseFloat(uploadForm.net) || 0,
+            remarks: uploadForm.remarks,
+            visible_to_employee: uploadForm.visible_to_employee
+          }
         }
       });
 
@@ -304,12 +305,20 @@ export const PayslipsList = ({ employee, isHR }: PayslipsListProps) => {
                 </div>
 
                 <div>
-                  <Label>File (PDF)</Label>
+                  <Label>File (PDF, DOC, DOCX, JPG, PNG)</Label>
                   <Input
                     type="file"
-                    accept=".pdf"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                     onChange={(e) => setUploadForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
                   />
+                  {uploading && (
+                    <div className="mt-2 space-y-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-primary h-2 rounded-full animate-pulse w-1/2"></div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">Uploading payslip...</p>
+                    </div>
+                  )}
                 </div>
 
                 <Button onClick={handleUpload} disabled={uploading} className="w-full">

@@ -1,21 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import { S3Client, PutObjectCommand, GetObjectCommand } from 'https://esm.sh/@aws-sdk/client-s3@3';
-import { getSignedUrl } from 'https://esm.sh/@aws-sdk/s3-request-presigner@3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Initialize S3 client
-const s3Client = new S3Client({
-  region: Deno.env.get('AWS_REGION') ?? 'us-east-1',
-  credentials: {
-    accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID') ?? '',
-    secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY') ?? '',
-  },
-});
 
 const buildKey = (employee: any, category: string, filename: string): string => {
   const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
@@ -58,29 +47,30 @@ serve(async (req) => {
     // Convert base64 to buffer
     const buffer = new Uint8Array(atob(fileData).split('').map(char => char.charCodeAt(0)));
 
-    // Upload to S3
-    const bucketName = Deno.env.get('AWS_S3_BUCKET') ?? '';
-    const uploadCommand = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: s3Key,
-      Body: buffer,
-      ContentType: contentType,
+    // Use supabase-upload function instead of direct S3
+    const { data: uploadData, error: uploadError } = await supabaseClient.functions.invoke('supabase-upload', {
+      body: new FormData().append('file', new Blob([buffer], { type: contentType }))
+        .append('bucket', 'documents')
+        .append('employeeId', employeeId)
+        .append('category', category)
+        .append('filename', fileName)
     });
 
-    await s3Client.send(uploadCommand);
+    if (uploadError) throw uploadError;
+    const actualS3Key = uploadData.filePath;
 
     // Update database based on document kind
     if (documentKind === 'avatar') {
       // Update employee avatar_url
       const { error: updateError } = await supabaseClient
         .from('employees')
-        .update({ avatar_url: s3Key })
+        .update({ avatar_url: actualS3Key })
         .eq('id', employeeId);
 
       if (updateError) throw updateError;
     } else if (documentKind === 'termination_letter') {
       // Handle termination letter - this would be processed elsewhere
-      console.log('Termination letter uploaded:', s3Key);
+      console.log('Termination letter uploaded:', actualS3Key);
     } else {
       // Check if this is a standard document type
       const standardDocumentTypes = ['aadhaar', 'pan', 'qualification', 'photo', 'passport_photo', 'regular_photo'];
@@ -90,10 +80,13 @@ serve(async (req) => {
         const updateField = `${documentKind}_key`;
         const { error: updateError } = await supabaseClient
           .from('employees')
-          .update({ [updateField]: s3Key })
+          .update({ [updateField]: actualS3Key })
           .eq('id', employeeId);
 
         if (updateError) throw updateError;
+      } else if (documentKind === 'payslip') {
+        // For payslips, just return the upload data - the payslip record will be created by the calling function
+        console.log('Payslip document uploaded:', actualS3Key);
       } else {
         // Insert into employee_documents for other documents
         const { error: insertError } = await supabaseClient
@@ -101,7 +94,7 @@ serve(async (req) => {
           .insert({
             employee_id: employeeId,
             title: fileName,
-            s3_key: s3Key,
+            s3_key: actualS3Key,
             content_type: contentType,
             size: buffer.length
           });
@@ -110,19 +103,12 @@ serve(async (req) => {
       }
     }
 
-    // Generate signed URL for immediate access
-    const getCommand = new GetObjectCommand({
-      Bucket: bucketName,
-      Key: s3Key,
-    });
-    const signedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
-
-    console.log('Document uploaded successfully:', { s3Key, signedUrl });
+    console.log('Document uploaded successfully:', { key: actualS3Key, url: uploadData.signedUrl });
 
     return new Response(
       JSON.stringify({ 
-        key: s3Key, 
-        url: signedUrl,
+        key: actualS3Key, 
+        url: uploadData.signedUrl,
         message: 'Document uploaded successfully' 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

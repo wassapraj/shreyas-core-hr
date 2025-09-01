@@ -135,6 +135,56 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
     }
   };
 
+  const handleDelete = async (documentKind: string) => {
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .update({ [`${documentKind}_key`]: null })
+        .eq('id', employee.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Document deleted successfully'
+      });
+
+      onDocumentUpdate();
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete document',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDeleteDocument = async (docId: string) => {
+    try {
+      const { error } = await supabase
+        .from('employee_documents')
+        .delete()
+        .eq('id', docId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Document deleted successfully'
+      });
+
+      fetchOtherDocuments();
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete document',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -157,34 +207,53 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
               <Card key={docType.key}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="font-medium">{docType.label}</Label>
-                      {hasDocument ? (
-                        <Badge variant="secondary" className="ml-2">
-                          Uploaded
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="ml-2">
-                          Not uploaded
-                        </Badge>
-                      )}
-                    </div>
+                        <div>
+                          <Label className="font-medium">{docType.label}</Label>
+                          <div className="flex items-center gap-2 mt-1">
+                            {hasDocument ? (
+                              <Badge variant="secondary">
+                                Uploaded
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">
+                                Not uploaded
+                              </Badge>
+                            )}
+                            {isUploading && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                Uploading...
+                              </div>
+                            )}
+                          </div>
+                        </div>
                     <div className="flex gap-2">
                       {hasDocument && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDownload(employee[docType.field], `${docType.label}.pdf`)}
-                        >
-                          <Download className="w-4 h-4 mr-1" />
-                          Download
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDownload(employee[docType.field], `${docType.label}.pdf`)}
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            Download
+                          </Button>
+                          {isHR && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(docType.key)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       )}
                       {isHR && (
                         <div className="relative">
                           <Input
                             type="file"
-                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.gif,.bmp,.tiff,.webp"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) handleFileUpload(file, docType.key);
@@ -225,15 +294,15 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
                   <div className="space-y-4">
                     <div>
                       <Label>Select File</Label>
-                      <Input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleFileUpload(file, 'other');
-                        }}
-                        disabled={uploading === 'other'}
-                      />
+                        <Input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.gif,.bmp,.tiff,.webp,.xlsx,.xls,.ppt,.pptx,.txt"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload(file, 'other');
+                          }}
+                          disabled={uploading === 'other'}
+                        />
                     </div>
                   </div>
                 </DialogContent>
@@ -265,7 +334,11 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
                           <Download className="w-4 h-4" />
                         </Button>
                         {isHR && (
-                          <Button size="sm" variant="destructive">
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleDeleteDocument(doc.id)}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         )}
