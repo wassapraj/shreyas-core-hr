@@ -47,21 +47,31 @@ serve(async (req) => {
     // Convert base64 to buffer
     const buffer = new Uint8Array(atob(fileData).split('').map(char => char.charCodeAt(0)));
 
-    // Create FormData properly
+    // Create FormData for the upload
     const formData = new FormData();
-    formData.append('file', new Blob([buffer], { type: contentType }));
+    
+    // Convert base64 to File object
+    const byteCharacters = atob(fileData);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const file = new File([byteArray], fileName, { type: contentType });
+    
+    formData.append('file', file);
     formData.append('bucket', 'documents');
-    formData.append('employeeId', employeeId);
+    formData.append('employee_id', employeeId);
     formData.append('category', category);
     formData.append('filename', fileName);
 
-    // Use supabase-upload function instead of direct S3
-    const { data: uploadData, error: uploadError } = await supabaseClient.functions.invoke('supabase-upload', {
+    // Invoke supabase upload function
+    const { data: uploadResult, error: uploadError } = await supabaseClient.functions.invoke('supabase-upload', {
       body: formData
     });
 
     if (uploadError) throw uploadError;
-    const actualS3Key = uploadData.filePath;
+    const actualS3Key = uploadResult.filePath;
 
     // Update database based on document kind
     if (documentKind === 'avatar') {
@@ -107,12 +117,12 @@ serve(async (req) => {
       }
     }
 
-    console.log('Document uploaded successfully:', { key: actualS3Key, url: uploadData.signedUrl });
+    console.log('Document uploaded successfully:', { key: actualS3Key, url: uploadResult.signedUrl });
 
     return new Response(
       JSON.stringify({ 
         key: actualS3Key, 
-        url: uploadData.signedUrl,
+        url: uploadResult.signedUrl,
         message: 'Document uploaded successfully' 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
