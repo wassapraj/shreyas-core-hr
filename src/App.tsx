@@ -37,6 +37,7 @@ import EmployeeAssets from '@/pages/EmployeeAssets';
 import EmployeeReminders from '@/pages/EmployeeReminders';
 import EmployeeNotes from '@/pages/EmployeeNotes';
 import CandidateOfferView from '@/pages/CandidateOfferView';
+import BulkAssignment from '@/pages/BulkAssignment';
 
 function App() {
   return (
