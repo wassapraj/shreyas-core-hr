@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Search, Plus, Upload } from 'lucide-react';
+import { Mail, Search, Plus, Upload, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EmailComposerModal } from '@/components/EmailComposerModal';
+import { createWhatsAppUrl, formatWhatsAppMessage } from '@/lib/phoneUtils';
 
 interface Employee {
   id: string;
@@ -116,6 +117,36 @@ export default function HREmployees() {
     e.stopPropagation();
     setSelectedEmployee(employee);
     setShowEmailModal(true);
+  };
+
+  const handleWhatsAppClick = (employee: Employee, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!employee.phone) {
+      toast({
+        variant: 'destructive',
+        title: 'No Phone Number',
+        description: 'This employee does not have a phone number on file.'
+      });
+      return;
+    }
+
+    const message = formatWhatsAppMessage(
+      "Hi {{first_name}}, this is HR from Shreyas HRMS. Please respond when you're available.",
+      employee
+    );
+    
+    const whatsappUrl = createWhatsAppUrl(employee.phone, message);
+    
+    if (whatsappUrl) {
+      window.open(whatsappUrl, '_blank');
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Phone Number',
+        description: 'Unable to format the phone number for WhatsApp.'
+      });
+    }
   };
 
   if (loading) {
@@ -227,13 +258,25 @@ export default function HREmployees() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => handleEmailClick(employee, e)}
-                    >
-                      <Mail className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => handleEmailClick(employee, e)}
+                        title="Send email"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => handleWhatsAppClick(employee, e)}
+                        disabled={!employee.phone}
+                        title={employee.phone ? "Open WhatsApp chat" : "No phone number"}
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

@@ -118,6 +118,8 @@ const EmployeeProfileDetail = () => {
     <div className="space-y-6">
       <EmployeeSnapshotHeader 
         employeeId={employee.id}
+        isHR={isHR}
+        isSelfView={employee.user_id === user?.id}
       />
       
       <EmployeeProfileTabs

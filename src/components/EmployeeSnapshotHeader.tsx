@@ -11,9 +11,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Mail, MessageCircle, Printer, Share2, Calendar, DollarSign, Clock, Users } from 'lucide-react';
+import { createWhatsAppUrl, formatWhatsAppMessage } from '@/lib/phoneUtils';
 
 interface EmployeeSnapshotHeaderProps {
   employeeId: string;
+  isHR?: boolean;
+  isSelfView?: boolean;
 }
 
 interface SnapshotData {
@@ -39,10 +42,11 @@ interface SnapshotData {
   };
 }
 
-const EmployeeSnapshotHeader = ({ employeeId }: EmployeeSnapshotHeaderProps) => {
+const EmployeeSnapshotHeader = ({ employeeId, isHR = false, isSelfView = false }: EmployeeSnapshotHeaderProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [snapshot, setSnapshot] = useState<SnapshotData | null>(null);
+  const [employee, setEmployee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [messageDialog, setMessageDialog] = useState(false);
   const [messageForm, setMessageForm] = useState({
@@ -55,7 +59,23 @@ const EmployeeSnapshotHeader = ({ employeeId }: EmployeeSnapshotHeaderProps) => 
 
   useEffect(() => {
     fetchSnapshot();
+    fetchEmployee();
   }, [employeeId]);
+
+  const fetchEmployee = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, phone, email')
+        .eq('id', employeeId)
+        .single();
+
+      if (error) throw error;
+      setEmployee(data);
+    } catch (error) {
+      console.error('Error fetching employee:', error);
+    }
+  };
 
   const fetchSnapshot = async () => {
     try {
@@ -128,6 +148,34 @@ const EmployeeSnapshotHeader = ({ employeeId }: EmployeeSnapshotHeaderProps) => 
         title: 'Error',
         description: 'Failed to save message',
         variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDirectWhatsApp = () => {
+    if (!employee?.phone) {
+      toast({
+        variant: 'destructive',
+        title: 'No Phone Number',
+        description: 'This employee does not have a phone number on file.'
+      });
+      return;
+    }
+
+    const message = formatWhatsAppMessage(
+      "Hi {{first_name}}, this is HR from Shreyas HRMS. Please respond when you're available.",
+      employee
+    );
+    
+    const whatsappUrl = createWhatsAppUrl(employee.phone, message);
+    
+    if (whatsappUrl) {
+      window.open(whatsappUrl, '_blank');
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Phone Number',
+        description: 'Unable to format the phone number for WhatsApp.'
       });
     }
   };
@@ -219,12 +267,24 @@ const EmployeeSnapshotHeader = ({ employeeId }: EmployeeSnapshotHeaderProps) => 
                 <Mail className="h-4 w-4 mr-2" />
                 Email
               </Button>
+              {isHR && !isSelfView && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={handleDirectWhatsApp}
+                  disabled={!employee?.phone}
+                  title={employee?.phone ? "Open WhatsApp chat" : "No phone number"}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  WhatsApp
+                </Button>
+              )}
               <Button size="sm" variant="outline" onClick={() => {
                 setMessageForm(prev => ({ ...prev, channel: 'WhatsApp' }));
                 setMessageDialog(true);
               }}>
                 <MessageCircle className="h-4 w-4 mr-2" />
-                WhatsApp
+                Compose
               </Button>
               <Button size="sm" variant="outline" onClick={() => window.print()}>
                 <Printer className="h-4 w-4 mr-2" />
