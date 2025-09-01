@@ -40,6 +40,7 @@ const documentTypes = [
 export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUploadProps) => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [otherDocs, setOtherDocs] = useState<DocumentItem[]>([]);
   const [uploaderOpen, setUploaderOpen] = useState(false);
 
@@ -66,7 +67,17 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
     if (!file) return;
 
     setUploading(kind);
+    setUploadProgress(prev => ({ ...prev, [kind]: 0 }));
+    
     try {
+      // Simulate upload progress for user feedback
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => ({
+          ...prev,
+          [kind]: Math.min((prev[kind] || 0) + Math.random() * 30, 90)
+        }));
+      }, 200);
+
       // Convert file to base64
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -88,6 +99,9 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
         }
       });
 
+      clearInterval(progressInterval);
+      setUploadProgress(prev => ({ ...prev, [kind]: 100 }));
+
       if (error) throw error;
 
       toast({
@@ -100,6 +114,11 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
         fetchOtherDocuments();
         setUploaderOpen(false);
       }
+      
+      // Clear progress after success animation
+      setTimeout(() => {
+        setUploadProgress(prev => ({ ...prev, [kind]: 0 }));
+      }, 1000);
     } catch (error) {
       console.error('Error uploading document:', error);
       toast({
@@ -107,6 +126,7 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
         description: `Failed to upload ${kind}`,
         variant: 'destructive'
       });
+      setUploadProgress(prev => ({ ...prev, [kind]: 0 }));
     } finally {
       setUploading(null);
     }
@@ -220,9 +240,19 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
                               </Badge>
                             )}
                             {isUploading && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                                Uploading...
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                  Uploading...
+                                </div>
+                                {uploadProgress[docType.key] > 0 && (
+                                  <div className="w-full bg-gray-200 rounded-full h-1">
+                                    <div 
+                                      className="bg-primary h-1 rounded-full transition-all duration-300" 
+                                      style={{ width: `${uploadProgress[docType.key]}%` }}
+                                    />
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -292,18 +322,34 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
                     <DialogTitle>Upload Document</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <div>
-                      <Label>Select File</Label>
-                        <Input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.gif,.bmp,.tiff,.webp,.xlsx,.xls,.ppt,.pptx,.txt"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload(file, 'other');
-                          }}
-                          disabled={uploading === 'other'}
-                        />
-                    </div>
+                     <div>
+                       <Label>Select File</Label>
+                         <Input
+                           type="file"
+                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.gif,.bmp,.tiff,.webp,.xlsx,.xls,.ppt,.pptx,.txt"
+                           onChange={(e) => {
+                             const file = e.target.files?.[0];
+                             if (file) handleFileUpload(file, 'other');
+                           }}
+                           disabled={uploading === 'other'}
+                         />
+                         {uploading === 'other' && (
+                           <div className="mt-2 space-y-2">
+                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                               <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                               Uploading document...
+                             </div>
+                             {uploadProgress.other > 0 && (
+                               <div className="w-full bg-gray-200 rounded-full h-2">
+                                 <div 
+                                   className="bg-primary h-2 rounded-full transition-all duration-300" 
+                                   style={{ width: `${uploadProgress.other}%` }}
+                                 />
+                               </div>
+                             )}
+                           </div>
+                         )}
+                     </div>
                   </div>
                 </DialogContent>
               </Dialog>

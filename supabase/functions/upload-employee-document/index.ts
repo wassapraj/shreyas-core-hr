@@ -47,13 +47,17 @@ serve(async (req) => {
     // Convert base64 to buffer
     const buffer = new Uint8Array(atob(fileData).split('').map(char => char.charCodeAt(0)));
 
+    // Create FormData properly
+    const formData = new FormData();
+    formData.append('file', new Blob([buffer], { type: contentType }));
+    formData.append('bucket', 'documents');
+    formData.append('employeeId', employeeId);
+    formData.append('category', category);
+    formData.append('filename', fileName);
+
     // Use supabase-upload function instead of direct S3
     const { data: uploadData, error: uploadError } = await supabaseClient.functions.invoke('supabase-upload', {
-      body: new FormData().append('file', new Blob([buffer], { type: contentType }))
-        .append('bucket', 'documents')
-        .append('employeeId', employeeId)
-        .append('category', category)
-        .append('filename', fileName)
+      body: formData
     });
 
     if (uploadError) throw uploadError;

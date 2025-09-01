@@ -37,6 +37,8 @@ import {
 import { EmployeeTerminateDialog } from '@/components/EmployeeTerminateDialog';
 import { EmployeeDeleteDialog } from '@/components/EmployeeDeleteDialog';
 import { AvatarUpload } from './AvatarUpload';
+import { DocumentUpload } from './DocumentUpload';
+import { PayslipsList } from './PayslipsList';
 
 interface EmployeeProfileTabsProps {
   employee: any;
@@ -855,101 +857,11 @@ const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({
 
       {/* Documents Tab */}
       <TabsContent value="documents" className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Document Management</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <Label>Aadhaar Card</Label>
-                  <div className="flex gap-2">
-                    <Input type="file" accept=".pdf,.jpg,.jpeg,.png" />
-                    <Button size="sm" variant="outline">Upload</Button>
-                  </div>
-                  {employee.aadhaar_card_url && (
-                    <div className="flex gap-2 mt-2">
-                      <Button size="sm" variant="outline">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
-                      <Button size="sm" variant="outline">Replace</Button>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label>PAN Card</Label>
-                  <div className="flex gap-2">
-                    <Input type="file" accept=".pdf,.jpg,.jpeg,.png" />
-                    <Button size="sm" variant="outline">Upload</Button>
-                  </div>
-                  {employee.pan_card_url && (
-                    <div className="flex gap-2 mt-2">
-                      <Button size="sm" variant="outline">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
-                      <Button size="sm" variant="outline">Replace</Button>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label>Qualification Proof</Label>
-                  <div className="flex gap-2">
-                    <Input type="file" accept=".pdf,.jpg,.jpeg,.png" />
-                    <Button size="sm" variant="outline">Upload</Button>
-                  </div>
-                  {employee.qualification_proof_url && (
-                    <div className="flex gap-2 mt-2">
-                      <Button size="sm" variant="outline">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
-                      <Button size="sm" variant="outline">Replace</Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label>Profile Photo</Label>
-                  <div className="flex gap-2">
-                    <Input type="file" accept=".jpg,.jpeg,.png" />
-                    <Button size="sm" variant="outline">Upload</Button>
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Passport Size Photo</Label>
-                  <div className="flex gap-2">
-                    <Input type="file" accept=".jpg,.jpeg,.png" />
-                    <Button size="sm" variant="outline">Upload</Button>
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Regular Photo</Label>
-                  <div className="flex gap-2">
-                    <Input type="file" accept=".jpg,.jpeg,.png" />
-                    <Button size="sm" variant="outline">Upload</Button>
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Other Documents</Label>
-                  <div className="flex gap-2">
-                    <Input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
-                    <Button size="sm" variant="outline">Upload</Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <DocumentUpload 
+          employee={employee} 
+          isHR={isHR} 
+          onDocumentUpdate={onEmployeeUpdate} 
+        />
       </TabsContent>
 
       {/* Leaves Tab */}
@@ -1208,69 +1120,10 @@ const EmployeeProfileTabs: React.FC<EmployeeProfileTabsProps> = ({
 
       {/* Payslips Tab */}
       <TabsContent value="payslips" className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Receipt className="h-5 w-5" />
-                Payslips
-              </div>
-              {isHR && (
-                <Button onClick={() => toast({ title: 'Feature', description: 'Payslip upload will be implemented soon' })}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Payslip
-                </Button>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {payslips.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No payslips found</p>
-            ) : (
-              <div className="space-y-4">
-                {payslips.map((payslip) => (
-                  <div key={payslip.id} className="flex items-center justify-between p-4 border rounded">
-                    <div className="space-y-1">
-                      <div className="font-medium">
-                        {new Date(payslip.year, payslip.month - 1).toLocaleDateString('en-US', { 
-                          month: 'long', 
-                          year: 'numeric' 
-                        })}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Gross: ₹{payslip.gross?.toLocaleString()} • Net: ₹{payslip.net?.toLocaleString()}
-                      </div>
-                      {payslip.remarks && (
-                        <div className="text-sm text-muted-foreground">
-                          {payslip.remarks}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isHR && (
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={payslip.visible_to_employee}
-                            onCheckedChange={(checked) => togglePayslipVisibility(payslip.id, checked)}
-                          />
-                          <Label className="text-sm">
-                            {payslip.visible_to_employee ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                          </Label>
-                        </div>
-                      )}
-                      {payslip.pdf_url && (
-                        <Button size="sm" variant="outline" onClick={() => window.open(payslip.pdf_url)}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <PayslipsList 
+          employee={employee} 
+          isHR={isHR} 
+        />
       </TabsContent>
 
       {/* Salary & Bank Tab */}

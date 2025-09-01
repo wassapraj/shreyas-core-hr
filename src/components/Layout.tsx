@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { 
   Users, 
   Calendar, 
@@ -24,6 +25,12 @@ const Layout = ({ children }: LayoutProps) => {
   const { user, userRole, signOut, hasRole } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  const { navigateWithCheck } = useUnsavedChanges({
+    hasUnsavedChanges,
+    message: 'You have unsaved changes. Are you sure you want to leave?'
+  });
 
   const handleSignOut = async () => {
     await signOut();
@@ -91,10 +98,10 @@ const Layout = ({ children }: LayoutProps) => {
               const isActive = location.pathname === item.href;
               
               return (
-                <Link
+                <button
                   key={item.href}
-                  to={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  onClick={() => navigateWithCheck(item.href)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 w-full text-left ${
                     isActive
                       ? 'bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/10'
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:shadow-md'
@@ -102,7 +109,7 @@ const Layout = ({ children }: LayoutProps) => {
                 >
                   <Icon className="h-5 w-5" />
                   {item.name}
-                </Link>
+                </button>
               );
             })}
           </nav>
