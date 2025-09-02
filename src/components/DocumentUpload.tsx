@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useDraftForm } from '@/hooks/useDraftForm';
 import { Upload, Download, Trash2, File, AlertCircle } from 'lucide-react';
 
 interface DocumentUploadProps {
@@ -78,42 +79,66 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
         }));
       }, 200);
 
-      // Convert file to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      
-      await new Promise((resolve, reject) => {
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-      });
-
-      const base64Data = (reader.result as string).split(',')[1];
-
-      const { data, error } = await supabase.functions.invoke('upload-employee-document', {
+      // Get signed URL for upload
+      const { data: urlData, error: urlError } = await supabase.functions.invoke('get-upload-url', {
         body: {
           employeeId: employee.id,
-          documentKind: kind,
+          category: 'documents',
           fileName: file.name,
-          fileData: base64Data,
           contentType: file.type
         }
       });
 
+      if (urlError) throw urlError;
+
+      // Upload file to S3 using signed URL
+      const uploadResponse = await fetch(urlData.uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload to S3');
+      }
+
       clearInterval(progressInterval);
       setUploadProgress(prev => ({ ...prev, [kind]: 100 }));
 
-      if (error) throw error;
+      if (kind === 'other') {
+        // Insert into employee_documents table
+        const { error: docError } = await supabase
+          .from('employee_documents')
+          .insert({
+            employee_id: employee.id,
+            title: file.name,
+            file_path: urlData.key,
+            s3_key: urlData.key
+          });
+
+        if (docError) throw docError;
+        fetchOtherDocuments();
+        setUploaderOpen(false);
+      } else {
+        // Update employee record for standard documents
+        const updateField = documentTypes.find(dt => dt.key === kind)?.field;
+        if (updateField) {
+          const { error: updateError } = await supabase
+            .from('employees')
+            .update({ [updateField]: urlData.key })
+            .eq('id', employee.id);
+
+          if (updateError) throw updateError;
+        }
+        onDocumentUpdate();
+      }
 
       toast({
         title: 'Success',
         description: `${kind} uploaded successfully`
       });
-
-      onDocumentUpdate();
-      if (kind === 'other') {
-        fetchOtherDocuments();
-        setUploaderOpen(false);
-      }
       
       // Clear progress after success animation
       setTimeout(() => {
@@ -134,11 +159,8 @@ export const DocumentUpload = ({ employee, isHR, onDocumentUpdate }: DocumentUpl
 
   const handleDownload = async (s3Key: string, filename: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('get-signed-url', {
-        body: { 
-          key: s3Key,
-          bucket: 'documents'
-        }
+      const { data, error } = await supabase.functions.invoke('get-download-url', {
+        body: { key: s3Key }
       });
 
       if (error) throw error;

@@ -84,35 +84,50 @@ export const InsurancePolicies = ({ employee, isHR }: InsurancePoliciesProps) =>
 
     setUploading(true);
     try {
-      // Convert file to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(uploadForm.file);
-      
-      await new Promise((resolve, reject) => {
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
+      // Get signed URL for upload
+      const { data: urlData, error: urlError } = await supabase.functions.invoke('get-upload-url', {
+        body: {
+          employeeId: employee.id,
+          category: 'insurance',
+          fileName: uploadForm.file.name,
+          contentType: uploadForm.file.type
+        }
       });
 
-      const base64Data = (reader.result as string).split(',')[1];
+      if (urlError) throw urlError;
 
-      const { data, error } = await supabase.functions.invoke('upload-insurance-card', {
-        body: {
+      // Upload file to S3 using signed URL
+      const uploadResponse = await fetch(urlData.uploadUrl, {
+        method: 'PUT',
+        body: uploadForm.file,
+        headers: {
+          'Content-Type': uploadForm.file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload to S3');
+      }
+
+      // Insert insurance policy record
+      const { error: insertError } = await supabase
+        .from('insurance_policies')
+        .insert({
           employee_id: employee.id,
           insurer_name: uploadForm.insurer_name,
           product_name: uploadForm.product_name,
           policy_number: uploadForm.policy_number,
-          start_date: uploadForm.start_date,
-          end_date: uploadForm.end_date,
-          file_name: uploadForm.file.name,
-          file_data: base64Data,
+          start_date: uploadForm.start_date || null,
+          end_date: uploadForm.end_date || null,
+          s3_key: urlData.key,
+          file_path: urlData.key,
           content_type: uploadForm.file.type,
           size: uploadForm.file.size,
           insurer_logo_url: uploadForm.insurer_logo_url || null,
           notes: uploadForm.notes || null
-        }
-      });
+        });
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       toast({
         title: 'Success',
@@ -145,7 +160,7 @@ export const InsurancePolicies = ({ employee, isHR }: InsurancePoliciesProps) =>
 
   const handleDownload = async (policy: InsurancePolicy) => {
     try {
-      const { data, error } = await supabase.functions.invoke('get-signed-url', {
+      const { data, error } = await supabase.functions.invoke('get-download-url', {
         body: { key: policy.s3_key }
       });
 

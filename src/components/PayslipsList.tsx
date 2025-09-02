@@ -81,47 +81,71 @@ export const PayslipsList = ({ employee, isHR }: PayslipsListProps) => {
   };
 
   const handleUpload = async () => {
-    if (!uploadForm.file) {
+    if (!uploadForm.file || !uploadForm.month || !uploadForm.year) {
       toast({
-        title: 'Error',
-        description: 'Please select a file',
-        variant: 'destructive'
+        variant: 'destructive',
+        title: 'Missing Information',
+        description: 'Please select a PDF file and fill in all required fields.'
+      });
+      return;
+    }
+
+    // Validate file type - only PDF allowed
+    if (uploadForm.file.type !== 'application/pdf') {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid File Type',
+        description: 'Only PDF files are allowed for payslips.'
       });
       return;
     }
 
     setUploading(true);
     try {
-      // Convert file to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(uploadForm.file);
-      
-      await new Promise((resolve, reject) => {
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-      });
-
-      const base64Data = (reader.result as string).split(',')[1];
-
-      const { data, error } = await supabase.functions.invoke('upload-payslip', {
+      // Get signed URL for upload
+      const { data: urlData, error: urlError } = await supabase.functions.invoke('get-upload-url', {
         body: {
           employeeId: employee.id,
-          fileName: `payslip_${uploadForm.month}_${uploadForm.year}_${uploadForm.file.name}`,
-          fileData: base64Data,
-          contentType: uploadForm.file.type,
-          metadata: {
-            month: uploadForm.month,
-            year: uploadForm.year,
-            gross: parseFloat(uploadForm.gross) || 0,
-            deductions: parseFloat(uploadForm.deductions) || 0,
-            net: parseFloat(uploadForm.net) || 0,
-            remarks: uploadForm.remarks,
-            visible_to_employee: uploadForm.visible_to_employee
-          }
+          category: 'payslips',
+          fileName: uploadForm.file.name,
+          contentType: uploadForm.file.type
         }
       });
 
-      if (error) throw error;
+      if (urlError) throw urlError;
+
+      // Upload file to S3 using signed URL
+      const uploadResponse = await fetch(urlData.uploadUrl, {
+        method: 'PUT',
+        body: uploadForm.file,
+        headers: {
+          'Content-Type': uploadForm.file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload to S3');
+      }
+
+      // Insert payslip record
+      const { error: insertError } = await supabase
+        .from('payslips')
+        .insert({
+          employee_id: employee.id,
+          month: uploadForm.month,
+          year: uploadForm.year,
+          gross: parseFloat(uploadForm.gross) || 0,
+          deductions: parseFloat(uploadForm.deductions) || 0,
+          net: parseFloat(uploadForm.net) || 0,
+          remarks: uploadForm.remarks || '',
+          visible_to_employee: uploadForm.visible_to_employee,
+          s3_key: urlData.key,
+          file_path: urlData.key,
+          content_type: uploadForm.file.type,
+          size: uploadForm.file.size
+        });
+
+      if (insertError) throw insertError;
 
       toast({
         title: 'Success',
@@ -154,7 +178,7 @@ export const PayslipsList = ({ employee, isHR }: PayslipsListProps) => {
 
   const handleDownload = async (payslip: Payslip) => {
     try {
-      const { data, error } = await supabase.functions.invoke('get-signed-url', {
+      const { data, error } = await supabase.functions.invoke('get-download-url', {
         body: { key: payslip.s3_key }
       });
 
@@ -305,10 +329,10 @@ export const PayslipsList = ({ employee, isHR }: PayslipsListProps) => {
                 </div>
 
                 <div>
-                  <Label>File (PDF, DOC, DOCX, JPG, PNG)</Label>
+                  <Label>File (PDF Only)</Label>
                   <Input
                     type="file"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    accept=".pdf"
                     onChange={(e) => setUploadForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
                   />
                   {uploading && (

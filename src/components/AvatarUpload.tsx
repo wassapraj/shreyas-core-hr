@@ -47,34 +47,39 @@ export const AvatarUpload = ({ employee, onAvatarUpdated }: AvatarUploadProps) =
     setIsUploading(true);
 
     try {
-      // Convert file to base64
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]); // Remove data:image/jpeg;base64, prefix
-        };
-        reader.onerror = reject;
-      });
-      reader.readAsDataURL(file);
-      const base64Data = await base64Promise;
-
-      // Upload via upload-employee-document function
-      const { data, error } = await supabase.functions.invoke('upload-employee-document', {
+      // Get signed URL for upload
+      const { data: urlData, error: urlError } = await supabase.functions.invoke('get-upload-url', {
         body: {
           employeeId: employee.id,
-          documentKind: 'avatar',
+          category: 'profile',
           fileName: `avatar.${file.type.split('/')[1]}`,
-          fileData: base64Data,
           contentType: file.type
         }
       });
 
-      if (error) {
-        throw error;
+      if (urlError) throw urlError;
+
+      // Upload file to S3 using signed URL
+      const uploadResponse = await fetch(urlData.uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload to S3');
       }
 
-      // Edge function already updated the employee record
+      // Update employee record with new avatar URL - let edge function handle this
+      // The S3 key is stored, and we'll generate signed URLs when needed
+      const { error: updateError } = await supabase
+        .from('employees')
+        .update({ avatar_url: urlData.key })
+        .eq('id', employee.id);
+
+      if (updateError) throw updateError;
 
       toast({
         title: 'Avatar Updated',
