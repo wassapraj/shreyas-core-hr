@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { S3Client, GetObjectCommand } from 'https://esm.sh/@aws-sdk/client-s3@3'
-import { getSignedUrl } from 'https://esm.sh/@aws-sdk/s3-request-presigner@3'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,14 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize S3 client
-    const s3Client = new S3Client({
-      region: Deno.env.get('AWS_REGION') ?? 'us-east-1',
-      credentials: {
-        accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID') ?? '',
-        secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY') ?? '',
-      },
-    })
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     const { key, expiresIn = 3600 } = await req.json()
 
@@ -32,20 +27,17 @@ serve(async (req) => {
     }
 
     console.log('Generating signed URL for:', key)
-
-    const bucketName = Deno.env.get('AWS_S3_BUCKET') ?? ''
     
-    // Generate signed URL for S3 object
-    const getCommand = new GetObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-    })
+    // Generate signed URL for Supabase Storage object
+    const { data: signedUrlData, error } = await supabaseClient.storage
+      .from('documents')
+      .createSignedUrl(key, expiresIn);
 
-    const signedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn })
+    if (error) throw error;
     
     return new Response(
       JSON.stringify({
-        signedUrl,
+        signedUrl: signedUrlData.signedUrl,
         expiresAt: new Date(Date.now() + (expiresIn * 1000)).toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -19,7 +19,7 @@ serve(async (req) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         global: {
           headers: { Authorization: req.headers.get('Authorization')! },
@@ -40,51 +40,48 @@ serve(async (req) => {
 
     if (employeeError) throw employeeError;
 
-    // Generate S3 key - use documentKind for category
+    // Generate storage path
     const category = documentKind === 'avatar' ? 'avatars' : 'documents';
-    const s3Key = buildKey(employee, category, fileName);
+    const storagePath = buildKey(employee, category, fileName);
 
     // Convert base64 to buffer
-    const buffer = new Uint8Array(atob(fileData).split('').map(char => char.charCodeAt(0)));
-
-    // Create FormData for the upload
-    const formData = new FormData();
-    
-    // Convert base64 to File object
     const byteCharacters = atob(fileData);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
       byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
-    const byteArray = new Uint8Array(byteNumbers);
-    const file = new File([byteArray], fileName, { type: contentType });
-    
-    formData.append('file', file);
-    formData.append('bucket', 'documents');
-    formData.append('employee_id', employeeId);
-    formData.append('category', category);
-    formData.append('filename', fileName);
+    const buffer = new Uint8Array(byteNumbers);
 
-    // Invoke supabase upload function
-    const { data: uploadResult, error: uploadError } = await supabaseClient.functions.invoke('supabase-upload', {
-      body: formData
-    });
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabaseClient.storage
+      .from('documents')
+      .upload(storagePath, buffer, {
+        contentType: contentType,
+        upsert: true
+      });
 
     if (uploadError) throw uploadError;
-    const actualS3Key = uploadResult.filePath;
+
+    // Generate signed URL
+    const { data: signedUrlData } = await supabaseClient.storage
+      .from('documents')
+      .createSignedUrl(storagePath, 604800); // 7 days
+
+    const actualStorageKey = uploadData.path;
+    const signedUrl = signedUrlData?.signedUrl;
 
     // Update database based on document kind
     if (documentKind === 'avatar') {
       // Update employee avatar_url
       const { error: updateError } = await supabaseClient
         .from('employees')
-        .update({ avatar_url: actualS3Key })
+        .update({ avatar_url: actualStorageKey })
         .eq('id', employeeId);
 
       if (updateError) throw updateError;
     } else if (documentKind === 'termination_letter') {
       // Handle termination letter - this would be processed elsewhere
-      console.log('Termination letter uploaded:', actualS3Key);
+      console.log('Termination letter uploaded:', actualStorageKey);
     } else {
       // Check if this is a standard document type
       const standardDocumentTypes = ['aadhaar', 'pan', 'qualification', 'photo', 'passport_photo', 'regular_photo'];
@@ -94,13 +91,13 @@ serve(async (req) => {
         const updateField = `${documentKind}_key`;
         const { error: updateError } = await supabaseClient
           .from('employees')
-          .update({ [updateField]: actualS3Key })
+          .update({ [updateField]: actualStorageKey })
           .eq('id', employeeId);
 
         if (updateError) throw updateError;
       } else if (documentKind === 'payslip') {
         // For payslips, just return the upload data - the payslip record will be created by the calling function
-        console.log('Payslip document uploaded:', actualS3Key);
+        console.log('Payslip document uploaded:', actualStorageKey);
       } else {
         // Insert into employee_documents for other documents
         const { error: insertError } = await supabaseClient
@@ -108,21 +105,21 @@ serve(async (req) => {
           .insert({
             employee_id: employeeId,
             title: fileName,
-            s3_key: actualS3Key,
+            file_path: actualStorageKey,
             content_type: contentType,
-            size: buffer.length
+            signed_url: signedUrl
           });
 
         if (insertError) throw insertError;
       }
     }
 
-    console.log('Document uploaded successfully:', { key: actualS3Key, url: uploadResult.signedUrl });
+    console.log('Document uploaded successfully:', { key: actualStorageKey, url: signedUrl });
 
     return new Response(
       JSON.stringify({ 
-        key: actualS3Key, 
-        url: uploadResult.signedUrl,
+        key: actualStorageKey, 
+        url: signedUrl,
         message: 'Document uploaded successfully' 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

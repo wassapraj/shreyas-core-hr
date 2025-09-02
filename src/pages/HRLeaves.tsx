@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X, Eye, Loader2, Filter } from "lucide-react";
+import { Check, X, Eye, Loader2, Filter, Plus } from "lucide-react";
+import LeaveBox from "@/components/LeaveBox";
 
 interface LeaveRequestWithEmployee {
   id: string;
@@ -172,10 +173,13 @@ export default function HRLeaves() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Leave Inbox</h1>
-        <Button onClick={loadLeaveRequests} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Filter className="h-4 w-4 mr-2" />}
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <LeaveBox onLeaveAdded={loadLeaveRequests} />
+          <Button onClick={loadLeaveRequests} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Filter className="h-4 w-4 mr-2" />}
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

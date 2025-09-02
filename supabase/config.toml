@@ -9,13 +9,19 @@ verify_jwt = true
 [functions.convert-to-employee]
 verify_jwt = true
 
+[functions.get-signed-url]
+verify_jwt = true
+
 [functions.hr-home-snapshot]
 verify_jwt = true
 
-[functions.leave-autofill]  
+[functions.leave-autofill]
 verify_jwt = true
 
 [functions.leave-compute-days]
+verify_jwt = true
+
+[functions.leave-record]
 verify_jwt = true
 
 [functions.leave-set-status]
@@ -53,3 +59,6 @@ verify_jwt = true
 
 [functions.seed-initial-users]
 verify_jwt = false
+
+[functions.upload-employee-document]
+verify_jwt = true
