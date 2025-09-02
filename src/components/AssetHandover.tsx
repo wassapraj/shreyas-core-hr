@@ -23,11 +23,13 @@ interface HandoverRequest {
   asset_id: string;
   from_employee_id: string;
   to_employee_id: string;
-  status: 'Requested' | 'Approved' | 'Rejected' | 'Completed';
+  status: string;
   comments: string;
   requested_on: string;
   approved_by?: string;
-  assets?: {
+  created_at: string;
+  updated_at: string;
+  asset?: {
     asset_code: string;
     type: string;
     model: string;
@@ -68,22 +70,51 @@ export const AssetHandover = ({ employee, isHR, assets = [], onUpdate }: AssetHa
       setLoading(true);
       let query = supabase
         .from('asset_handover_requests')
-        .select(`
-          *,
-          assets:asset_id (asset_code, type, model),
-          from_employee:from_employee_id (first_name, last_name, emp_code),
-          to_employee:to_employee_id (first_name, last_name, emp_code)
-        `);
+        .select('*');
 
       if (!isHR) {
         // Employees can only see their own requests
         query = query.or(`from_employee_id.eq.${employee.id},to_employee_id.eq.${employee.id}`);
       }
 
-      const { data, error } = await query.order('requested_on', { ascending: false });
+      const { data: requestsData, error } = await query.order('requested_on', { ascending: false });
 
       if (error) throw error;
-      setRequests(data || []);
+
+      // Fetch related data separately to avoid join issues
+      const requestsWithDetails = await Promise.all(
+        (requestsData || []).map(async (request) => {
+          // Get asset details
+          const { data: assetData } = await supabase
+            .from('assets')
+            .select('asset_code, type, model')
+            .eq('id', request.asset_id)
+            .single();
+
+          // Get from employee details  
+          const { data: fromEmployee } = await supabase
+            .from('employees')
+            .select('first_name, last_name, emp_code')
+            .eq('id', request.from_employee_id)
+            .single();
+
+          // Get to employee details
+          const { data: toEmployee } = await supabase
+            .from('employees')
+            .select('first_name, last_name, emp_code')
+            .eq('id', request.to_employee_id)
+            .single();
+
+          return {
+            ...request,
+            asset: assetData,
+            from_employee: fromEmployee,
+            to_employee: toEmployee
+          };
+        })
+      );
+
+      setRequests(requestsWithDetails);
     } catch (error) {
       console.error('Error fetching handover requests:', error);
       toast({
@@ -309,7 +340,7 @@ export const AssetHandover = ({ employee, isHR, assets = [], onUpdate }: AssetHa
                     <ArrowRightLeft className="w-5 h-5 text-muted-foreground" />
                     <div>
                       <h4 className="font-medium">
-                        {request.assets?.asset_code} - {request.assets?.type}
+                        {request.asset?.asset_code} - {request.asset?.type}
                       </h4>
                       <p className="text-sm text-muted-foreground">
                         {request.from_employee?.first_name} {request.from_employee?.last_name} → {request.to_employee?.first_name} {request.to_employee?.last_name}

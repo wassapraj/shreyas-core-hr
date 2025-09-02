@@ -12,6 +12,12 @@ verify_jwt = true
 [functions.get-signed-url]
 verify_jwt = true
 
+[functions.get-upload-url]
+verify_jwt = true
+
+[functions.get-download-url]  
+verify_jwt = true
+
 [functions.hr-home-snapshot]
 verify_jwt = true
 
