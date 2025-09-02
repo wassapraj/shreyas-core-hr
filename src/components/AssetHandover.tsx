@@ -23,27 +23,27 @@ interface HandoverRequest {
   asset_id: string;
   from_employee_id: string;
   to_employee_id: string;
-  status: string;
-  comments: string;
+  status: 'Requested' | 'Approved' | 'Rejected' | 'Completed';
   requested_on: string;
   approved_by?: string;
+  comments?: string;
   created_at: string;
   updated_at: string;
-  asset?: {
+  asset: {
     asset_code: string;
     type: string;
     model: string;
-  };
-  from_employee?: {
+  } | null;
+  from_employee: {
     first_name: string;
     last_name: string;
     emp_code: string;
-  };
-  to_employee?: {
+  } | null;
+  to_employee: {
     first_name: string;
     last_name: string;
     emp_code: string;
-  };
+  } | null;
 }
 
 export const AssetHandover = ({ employee, isHR, assets = [], onUpdate }: AssetHandoverProps) => {
@@ -68,53 +68,44 @@ export const AssetHandover = ({ employee, isHR, assets = [], onUpdate }: AssetHa
   const fetchHandoverRequests = async () => {
     try {
       setLoading(true);
+      
+      // Build query filter based on user role
+      const queryFilter = isHR 
+        ? undefined // HR can see all requests
+        : `from_employee_id.eq.${employee.id},to_employee_id.eq.${employee.id}`;
+
       let query = supabase
         .from('asset_handover_requests')
-        .select('*');
+        .select(`
+          *,
+          asset:assets(asset_code, type, model),
+          from_employee:employees!asset_handover_requests_from_employee_id_fkey(first_name, last_name, emp_code),
+          to_employee:employees!asset_handover_requests_to_employee_id_fkey(first_name, last_name, emp_code)
+        `)
+        .order('requested_on', { ascending: false });
 
-      if (!isHR) {
-        // Employees can only see their own requests
-        query = query.or(`from_employee_id.eq.${employee.id},to_employee_id.eq.${employee.id}`);
+      if (queryFilter) {
+        query = query.or(queryFilter);
       }
 
-      const { data: requestsData, error } = await query.order('requested_on', { ascending: false });
+      const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching handover requests:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load handover requests'
+        });
+        return;
+      }
 
-      // Fetch related data separately to avoid join issues
-      const requestsWithDetails = await Promise.all(
-        (requestsData || []).map(async (request) => {
-          // Get asset details
-          const { data: assetData } = await supabase
-            .from('assets')
-            .select('asset_code, type, model')
-            .eq('id', request.asset_id)
-            .single();
-
-          // Get from employee details  
-          const { data: fromEmployee } = await supabase
-            .from('employees')
-            .select('first_name, last_name, emp_code')
-            .eq('id', request.from_employee_id)
-            .single();
-
-          // Get to employee details
-          const { data: toEmployee } = await supabase
-            .from('employees')
-            .select('first_name, last_name, emp_code')
-            .eq('id', request.to_employee_id)
-            .single();
-
-          return {
-            ...request,
-            asset: assetData,
-            from_employee: fromEmployee,
-            to_employee: toEmployee
-          };
-        })
-      );
-
-      setRequests(requestsWithDetails);
+      // Filter out any malformed data and ensure proper typing
+      const validRequests = (data || []).filter(request => 
+        request.asset && request.from_employee && request.to_employee
+      ) as HandoverRequest[];
+      
+      setRequests(validRequests);
     } catch (error) {
       console.error('Error fetching handover requests:', error);
       toast({
