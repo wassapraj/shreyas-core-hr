@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,6 +28,64 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<number>(0);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Controlled refresh function
+  const refreshSession = async () => {
+    const now = Date.now();
+    const fiveMinutes = 5 * 60 * 1000;
+    
+    // Guard: Don't refresh if less than 5 minutes since last refresh
+    if (now - lastRefresh < fiveMinutes) {
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (!error && data.session) {
+        setLastRefresh(now);
+        console.log('Session refreshed successfully');
+      }
+    } catch (error) {
+      console.error('Failed to refresh session:', error);
+    }
+  };
+
+  // Setup refresh scheduler
+  const setupRefreshScheduler = (session: Session | null) => {
+    // Clear existing interval
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+    }
+    
+    if (session) {
+      // Set up 5-minute interval refresh
+      refreshIntervalRef.current = setInterval(() => {
+        refreshSession();
+      }, 5 * 60 * 1000);
+      
+      // Set up visibility change handler for opportunistic refresh
+      const handleVisibilityChange = () => {
+        if (!document.hidden && session) {
+          const expiresAt = new Date(session.expires_at! * 1000).getTime();
+          const now = Date.now();
+          const oneHour = 60 * 60 * 1000;
+          
+          // Refresh if session expires within an hour
+          if (expiresAt - now < oneHour) {
+            refreshSession();
+          }
+        }
+      };
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -35,6 +93,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Setup or cleanup refresh scheduler
+        setupRefreshScheduler(session);
         
         if (session?.user) {
           // Defer role fetching with setTimeout to prevent deadlock
@@ -65,10 +126,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setupRefreshScheduler(session);
       setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
