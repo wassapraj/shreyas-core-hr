@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Mail, Search, Plus, Upload, MessageCircle, Trash2, Flag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EmailComposerModal } from '@/components/EmailComposerModal';
-import { SmartImportModal } from '@/components/SmartImportModal';
+import { SimpleEmployeeImport } from '@/components/SimpleEmployeeImport';
 import { EmployeeDeleteDialog } from '@/components/EmployeeDeleteDialog';
 import { EmployeeTerminateDialog } from '@/components/EmployeeTerminateDialog';
 import { EmployeeAvatar } from '@/components/EmployeeAvatar';
@@ -381,7 +381,7 @@ export default function HREmployees() {
         }}
       />
 
-      <SmartImportModal
+      <SimpleEmployeeImport
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onSuccess={fetchEmployees}
