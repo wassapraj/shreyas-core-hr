@@ -731,31 +731,51 @@ const HRDashboard = () => {
           {/* Events Calendar - Full Width */}
           <Card className="glass-card w-full">
             <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Calendar className="h-6 w-6 text-primary" />
                 Events Calendar
               </CardTitle>
               <CardDescription>
                 Click on a date to view events. Dates with events are highlighted.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex justify-center">
-              <CalendarComponent
-                mode="single"
-                selected={selectedDate}
-                onSelect={handleDateSelect}
-                className="rounded-md border shadow pointer-events-auto scale-110"
-                modifiers={{
-                  hasEvents: (date) => hasEventsOnDate(date)
-                }}
-                modifiersStyles={{
-                  hasEvents: { 
-                    backgroundColor: 'hsl(var(--primary))', 
-                    color: 'hsl(var(--primary-foreground))',
-                    fontWeight: 'bold'
-                  }
-                }}
-              />
+            <CardContent className="p-8">
+              <div className="w-full flex justify-center">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDateSelect}
+                  className="rounded-lg border-2 shadow-lg pointer-events-auto w-full max-w-4xl"
+                  classNames={{
+                    months: "flex w-full justify-center",
+                    month: "space-y-4 w-full",
+                    caption: "flex justify-center pt-1 relative items-center text-lg font-semibold",
+                    caption_label: "text-xl font-bold",
+                    table: "w-full border-collapse space-y-1",
+                    head_row: "flex w-full",
+                    head_cell: "text-muted-foreground rounded-md font-semibold text-lg w-full h-12 flex items-center justify-center",
+                    row: "flex w-full mt-2",
+                    cell: "relative h-12 w-full text-center text-base p-0 focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md",
+                    day: "h-12 w-full p-0 font-medium text-base hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground aria-selected:opacity-100 rounded-md",
+                    day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                    day_today: "bg-accent text-accent-foreground font-bold",
+                    day_outside: "text-muted-foreground opacity-50",
+                    day_disabled: "text-muted-foreground opacity-50",
+                    day_hidden: "invisible"
+                  }}
+                  modifiers={{
+                    hasEvents: (date) => hasEventsOnDate(date)
+                  }}
+                  modifiersStyles={{
+                    hasEvents: { 
+                      backgroundColor: 'hsl(var(--primary))', 
+                      color: 'hsl(var(--primary-foreground))',
+                      fontWeight: 'bold',
+                      border: '2px solid hsl(var(--primary))'
+                    }
+                  }}
+                />
+              </div>
             </CardContent>
           </Card>
         </>
