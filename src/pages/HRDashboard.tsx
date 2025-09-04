@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { format, isSameDay, parseISO } from 'date-fns';
 import { 
   Copy, 
   Calendar, 
@@ -48,6 +51,9 @@ const HRDashboard = () => {
   const [departments, setDepartments] = useState<string[]>([]);
   const [managers, setManagers] = useState<any[]>([]);
   const [filters, setFilters] = useState({ dept: '', manager_id: '' });
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [eventsForDate, setEventsForDate] = useState<any[]>([]);
 
   useEffect(() => {
     loadFilterOptions();
@@ -180,6 +186,104 @@ const HRDashboard = () => {
     return due < today;
   };
 
+  const getEventsForDate = (date: Date) => {
+    if (!data) return [];
+    
+    const events: any[] = [];
+    
+    // Add birthdays
+    [...data.birthdays.today, ...data.birthdays.next7, ...data.birthdays.next30].forEach(birthday => {
+      if (birthday.employee?.dob) {
+        const birthDate = new Date(birthday.employee.dob);
+        const thisYearBirthday = new Date(date.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+        if (isSameDay(thisYearBirthday, date)) {
+          events.push({
+            type: 'Birthday',
+            title: `${birthday.employee.name}'s Birthday`,
+            description: `Department: ${birthday.employee.department}`,
+            icon: '🎂'
+          });
+        }
+      }
+    });
+
+    // Add anniversaries
+    [...data.anniversaries.today, ...data.anniversaries.next7, ...data.anniversaries.next30].forEach(anniversary => {
+      if (anniversary.employee?.doj) {
+        const joinDate = new Date(anniversary.employee.doj);
+        const thisYearAnniversary = new Date(date.getFullYear(), joinDate.getMonth(), joinDate.getDate());
+        if (isSameDay(thisYearAnniversary, date)) {
+          const years = date.getFullYear() - joinDate.getFullYear();
+          events.push({
+            type: 'Anniversary',
+            title: `${anniversary.employee.name}'s Work Anniversary`,
+            description: `${years} years at company - Department: ${anniversary.employee.department}`,
+            icon: '🎉'
+          });
+        }
+      }
+    });
+
+    // Add leaves
+    [...data.todayLeaves, ...data.tomorrowLeaves].forEach(leave => {
+      const startDate = new Date(leave.start_date);
+      const endDate = new Date(leave.end_date);
+      if (date >= startDate && date <= endDate) {
+        events.push({
+          type: 'Leave',
+          title: `${leave.employee.name} - ${leave.type}`,
+          description: `${leave.days} day(s) - Department: ${leave.employee.department}`,
+          icon: '🏖️'
+        });
+      }
+    });
+
+    // Add hike watch
+    [...data.hikeWatch.overdue, ...data.hikeWatch.thisMonth, ...data.hikeWatch.next60].forEach(hike => {
+      if (hike.nextHikeDate) {
+        const hikeDate = new Date(hike.nextHikeDate);
+        if (isSameDay(hikeDate, date)) {
+          events.push({
+            type: 'Hike Due',
+            title: `${hike.employee.name} - Hike Due`,
+            description: `Department: ${hike.employee.department}`,
+            icon: '💰'
+          });
+        }
+      }
+    });
+
+    // Add reminders
+    data.reminders.forEach(reminder => {
+      if (reminder.due_date) {
+        const reminderDate = new Date(reminder.due_date);
+        if (isSameDay(reminderDate, date)) {
+          events.push({
+            type: 'Reminder',
+            title: reminder.title,
+            description: `Type: ${reminder.type}`,
+            icon: '🔔'
+          });
+        }
+      }
+    });
+
+    return events;
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    
+    setSelectedDate(date);
+    const events = getEventsForDate(date);
+    setEventsForDate(events);
+    setShowEventModal(true);
+  };
+
+  const hasEventsOnDate = (date: Date) => {
+    return getEventsForDate(date).length > 0;
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -242,7 +346,39 @@ const HRDashboard = () => {
       </div>
 
       {data && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="space-y-6">
+          {/* Events Calendar */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Events Calendar
+              </CardTitle>
+              <CardDescription>
+                Click on a date to view events. Dates with events are highlighted.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDateSelect}
+                className="rounded-md border shadow pointer-events-auto"
+                modifiers={{
+                  hasEvents: (date) => hasEventsOnDate(date)
+                }}
+                modifiersStyles={{
+                  hasEvents: { 
+                    backgroundColor: 'hsl(var(--primary))', 
+                    color: 'hsl(var(--primary-foreground))',
+                    fontWeight: 'bold'
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Today's Leaves */}
           <Card className="glass-card">
             <CardHeader className="flex flex-row items-center space-y-0 pb-2">
@@ -621,8 +757,36 @@ const HRDashboard = () => {
               )}
             </CardContent>
           </Card>
+          </div>
         </div>
       )}
+
+      {/* Event Details Modal */}
+      <Dialog open={showEventModal} onOpenChange={setShowEventModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Events for {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {eventsForDate.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No events on this date</p>
+            ) : (
+              eventsForDate.map((event, idx) => (
+                <div key={idx} className="flex items-start gap-3 p-3 rounded bg-accent/10">
+                  <span className="text-lg">{event.icon}</span>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{event.title}</p>
+                    <p className="text-xs text-muted-foreground">{event.description}</p>
+                    <Badge variant="outline" className="text-xs mt-1">{event.type}</Badge>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
