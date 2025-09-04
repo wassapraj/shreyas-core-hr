@@ -80,6 +80,13 @@ serve(async (req) => {
 
     console.log(`Parsed ${employees.length} employee records`);
 
+    // Use OpenAI to enhance and normalize employee data
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (openAIApiKey && employees.length > 0) {
+      console.log('Enhancing employee data with OpenAI...');
+      employees = await enhanceEmployeeDataWithAI(employees, openAIApiKey);
+    }
+
     // Process and save employees
     const results = await processEmployees(supabase, employees);
 
@@ -261,4 +268,70 @@ async function processEmployees(supabase: any, employees: any[]) {
   }
 
   return { created, updated, errors };
+}
+
+async function enhanceEmployeeDataWithAI(employees: any[], openAIApiKey: string) {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-5-mini-2025-08-07',
+        max_completion_tokens: 2000,
+        messages: [
+          {
+            role: 'system',
+            content: `You are an HR data processing assistant. Parse and normalize employee data from various formats into a standardized structure.
+
+REQUIRED: Return a JSON array with normalized employee objects. Each object must have:
+- first_name (required): Extract from name fields, handle full names intelligently
+- last_name: Split from full names if needed
+- email: Validate and format email addresses, generate if missing using pattern
+- phone: Clean phone numbers to Indian format without spaces/dashes
+- department: Standardize department names
+- designation: Normalize job titles
+- doj: Convert any date format to YYYY-MM-DD (handle Excel serial dates, DD/MM/YYYY, MM/DD/YYYY, etc.)
+- monthly_ctc: Extract numeric values from salary fields
+
+CRITICAL RULES:
+1. If email is missing, generate using pattern: firstname.lastname@company.com (use 'shreyasgroup.net' as domain)
+2. Handle Indian date formats (DD/MM/YYYY is common)
+3. Convert Excel serial dates (like 45894) to proper dates
+4. Clean and standardize all text fields
+5. Skip records without a name
+6. Return only valid JSON array, no markdown or explanations`
+          },
+          {
+            role: 'user',
+            content: `Parse this employee data: ${JSON.stringify(employees.slice(0, 50))}` // Process in chunks
+          }
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`OpenAI API error: ${response.status}`);
+      return employees; // Return original data if AI fails
+    }
+
+    const data = await response.json();
+    const enhancedData = JSON.parse(data.choices[0].message.content);
+    
+    console.log(`Enhanced ${enhancedData.length} employee records with AI`);
+    
+    // If we processed in chunks, merge with remaining data
+    if (employees.length > 50) {
+      const remaining = employees.slice(50);
+      return [...enhancedData, ...remaining];
+    }
+    
+    return enhancedData;
+
+  } catch (error) {
+    console.error('Error enhancing data with OpenAI:', error);
+    return employees; // Return original data if enhancement fails
+  }
 }
