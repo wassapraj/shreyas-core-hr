@@ -32,6 +32,23 @@ export const SimpleEmployeeImport = ({ isOpen, onClose, onSuccess }: SimpleEmplo
     message: ''
   });
 
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          // Remove data URL prefix to get just the base64 content
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        } else {
+          reject(new Error('Failed to read file'));
+        }
+      };
+      reader.onerror = () => reject(new Error('File reading failed'));
+      reader.readAsDataURL(file);
+    });
+  };
+
   const processFile = async (file: File) => {
     setUploadState({
       status: 'uploading',
@@ -40,9 +57,8 @@ export const SimpleEmployeeImport = ({ isOpen, onClose, onSuccess }: SimpleEmplo
     });
 
     try {
-      // Convert file to base64 for reliable serialization
-      const arrayBuffer = await file.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      // Convert file to base64 safely without stack overflow
+      const base64 = await convertToBase64(file);
       
       setUploadState({
         status: 'processing',
@@ -82,16 +98,20 @@ export const SimpleEmployeeImport = ({ isOpen, onClose, onSuccess }: SimpleEmplo
 
     } catch (error) {
       console.error('Error processing file:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Processing failed. Please check your file format and try again.';
+      
       setUploadState({
         status: 'error',
         progress: 0,
-        message: error instanceof Error ? error.message : 'Processing failed'
+        message: errorMessage
       });
       
       toast({
         variant: 'destructive',
         title: 'Import Failed',
-        description: error instanceof Error ? error.message : 'Failed to process file'
+        description: errorMessage
       });
     }
   };
@@ -126,6 +146,10 @@ export const SimpleEmployeeImport = ({ isOpen, onClose, onSuccess }: SimpleEmplo
   });
 
   const handleClose = () => {
+    // Prevent closing during upload/processing
+    if (uploadState.status === 'uploading' || uploadState.status === 'processing') {
+      return;
+    }
     setUploadState({ status: 'idle', progress: 0, message: '' });
     onClose();
   };
@@ -146,10 +170,16 @@ export const SimpleEmployeeImport = ({ isOpen, onClose, onSuccess }: SimpleEmplo
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent 
+        className="max-w-md" 
+        aria-describedby="import-description"
+      >
         <DialogHeader>
           <DialogTitle>Import Employees</DialogTitle>
         </DialogHeader>
+        <div id="import-description" className="sr-only">
+          Upload a CSV or Excel file to import employee data. The system will process the file and add new employees or update existing ones.
+        </div>
 
         <div className="space-y-6">
           {uploadState.status === 'idle' && (
