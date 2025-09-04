@@ -73,8 +73,9 @@ export const SmartImportModal = ({ isOpen, onClose, onSuccess }: SmartImportModa
       errors.push('Invalid email format');
     }
     
-    if (employee.department && !departments.includes(employee.department)) {
-      errors.push('Invalid department');
+    // Relax department validation - allow any non-empty department
+    if (employee.department && !employee.department.trim()) {
+      errors.push('Department cannot be empty');
     }
     
     if (employee.status && !statusOptions.includes(employee.status)) {
@@ -128,7 +129,7 @@ export const SmartImportModal = ({ isOpen, onClose, onSuccess }: SmartImportModa
         const arrayBuffer = await uploadedFile.file.arrayBuffer();
         const base64 = arrayBufferToBase64(arrayBuffer);
         
-        // Upload to S3 and parse
+        // Upload and parse
         const { data, error } = await supabase.functions.invoke('employee-import-process', {
           body: { 
             fileName: uploadedFile.file.name,
@@ -140,18 +141,41 @@ export const SmartImportModal = ({ isOpen, onClose, onSuccess }: SmartImportModa
 
         if (error) throw error;
 
+        let employeesData = data?.employees || [];
+        
+        // If no employees in response, try to fetch from database
+        if (!employeesData?.length && data?.importId) {
+          try {
+            const { data: importRecord } = await supabase
+              .from('employee_imports')
+              .select('result_json')
+              .eq('id', data.importId)
+              .single();
+            
+            if (importRecord?.result_json && typeof importRecord.result_json === 'object' && importRecord.result_json !== null) {
+              const resultData = importRecord.result_json as any;
+              if (resultData.employees) {
+                employeesData = resultData.employees;
+              }
+            }
+          } catch (fetchError) {
+            console.warn('Failed to fetch import data:', fetchError);
+          }
+        }
+
         setUploadedFiles(prev => prev.map(f => 
           f.id === uploadedFile.id ? { 
             ...f, 
-            status: 'parsed', 
+            status: employeesData.length > 0 ? 'parsed' : 'failed', 
             progress: 100,
-            parsedData: data.employees 
+            parsedData: employeesData,
+            error: employeesData.length === 0 ? 'No employee data found' : undefined
           } : f
         ));
 
         // Add parsed data to employee rows
-        if (data.employees?.length > 0) {
-          const newRows: EmployeeRow[] = data.employees.map((emp: any) => {
+        if (employeesData?.length > 0) {
+          const newRows: EmployeeRow[] = employeesData.map((emp: any) => {
             const validation = validateEmployee(emp);
             return {
               id: crypto.randomUUID(),
@@ -163,6 +187,21 @@ export const SmartImportModal = ({ isOpen, onClose, onSuccess }: SmartImportModa
           });
           
           setEmployeeRows(prev => [...prev, ...newRows]);
+          
+          // Show success toast
+          toast({
+            title: 'File Processed Successfully',
+            description: `Found ${employeesData.length} employee records`
+          });
+          
+          // Switch to review tab after successful parsing
+          setTimeout(() => setActiveTab('review'), 500);
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'No Data Found',
+            description: 'The file was processed but no employee data was extracted'
+          });
         }
 
       } catch (error) {
@@ -177,10 +216,7 @@ export const SmartImportModal = ({ isOpen, onClose, onSuccess }: SmartImportModa
       }
     }
 
-    // Switch to review tab when files are processed
-    if (newFiles.length > 0) {
-      setTimeout(() => setActiveTab('review'), 1000);
-    }
+    // Tab switching is now handled per successful file processing
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -198,8 +234,21 @@ export const SmartImportModal = ({ isOpen, onClose, onSuccess }: SmartImportModa
   });
 
   const removeFile = (fileId: string) => {
+    // Get the file being removed to find associated employee rows
+    const fileToRemove = uploadedFiles.find(f => f.id === fileId);
+    
+    // Remove the file
     setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
-    setEmployeeRows(prev => prev.filter(row => !uploadedFiles.find(f => f.id === fileId)?.parsedData?.some((d: any) => d.id === row.id)));
+    
+    // Remove associated employee rows by checking if they came from this file's parsed data
+    if (fileToRemove?.parsedData) {
+      const parsedDataLength = fileToRemove.parsedData.length;
+      setEmployeeRows(prev => {
+        // Remove the last N rows that match the parsed data count
+        const remaining = prev.slice(0, -parsedDataLength);
+        return remaining;
+      });
+    }
   };
 
   const updateEmployeeRow = (rowId: string, updates: Partial<EmployeeRow>) => {
