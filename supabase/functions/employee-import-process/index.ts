@@ -17,10 +17,11 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')!;
-    const awsAccessKey = Deno.env.get('AWS_ACCESS_KEY_ID')!;
-    const awsSecretKey = Deno.env.get('AWS_SECRET_ACCESS_KEY')!;
-    const awsBucket = Deno.env.get('AWS_S3_BUCKET')!;
-    const awsRegion = Deno.env.get('AWS_REGION')!;
+    // AWS credentials are now optional - fallback to Supabase Storage
+    const awsAccessKey = Deno.env.get('AWS_ACCESS_KEY_ID');
+    const awsSecretKey = Deno.env.get('AWS_SECRET_ACCESS_KEY');
+    const awsBucket = Deno.env.get('AWS_S3_BUCKET');
+    const awsRegion = Deno.env.get('AWS_REGION');
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false }
@@ -70,17 +71,28 @@ serve(async (req) => {
     
     console.log(`Processing file: ${fileName}, type: ${fileType}, size: ${fileSize}`);
 
-    // Generate S3 key
+    // Generate storage key
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const fileId = crypto.randomUUID();
-    const s3Key = `imports/employees/${year}/${month}/${fileId}_${fileName}`;
+    const storageKey = `imports/employees/${year}/${month}/${fileId}_${fileName}`;
 
-    // Upload to S3
-    const uploadResponse = await uploadToS3(processedFileData, s3Key, fileType);
-    if (!uploadResponse.success) {
-      throw new Error(`S3 upload failed: ${uploadResponse.error}`);
+    // Try to upload file (non-blocking - parsing can still work if this fails)
+    let uploadResult: { success: boolean; key?: string; error?: string };
+    
+    // Try S3 first if credentials are available, otherwise use Supabase Storage
+    if (awsAccessKey && awsSecretKey && awsBucket && awsRegion) {
+      uploadResult = await uploadToS3(processedFileData, storageKey, fileType, awsAccessKey, awsSecretKey, awsBucket, awsRegion);
+      console.log('S3 upload result:', uploadResult.success ? 'success' : uploadResult.error);
+    } else {
+      uploadResult = await uploadToSupabaseStorage(supabase, processedFileData, storageKey, fileType);
+      console.log('Supabase Storage upload result:', uploadResult.success ? 'success' : uploadResult.error);
+    }
+    
+    // Don't fail the entire process if upload fails - log it and continue
+    if (!uploadResult.success) {
+      console.warn(`File upload failed (non-critical): ${uploadResult.error}`);
     }
 
     // Save import record
@@ -88,7 +100,7 @@ serve(async (req) => {
       .from('employee_imports')
       .insert({
         file_name: fileName,
-        file_key: s3Key,
+        file_key: uploadResult.success ? (uploadResult.key || storageKey) : null,
         mime_type: fileType,
         file_size: fileSize,
         uploaded_by: user.id,
@@ -140,7 +152,8 @@ serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           employees: parsedEmployees,
-          importId: importRecord.id
+          importId: importRecord.id,
+          uploadStatus: uploadResult.success ? 'success' : 'failed'
         }),
         { headers: corsHeaders }
       );
@@ -170,13 +183,27 @@ serve(async (req) => {
   }
 });
 
-async function uploadToS3(fileData: ArrayBuffer, key: string, contentType: string) {
+async function uploadToSupabaseStorage(supabase: any, fileData: ArrayBuffer, key: string, contentType: string) {
   try {
-    const awsAccessKey = Deno.env.get('AWS_ACCESS_KEY_ID')!;
-    const awsSecretKey = Deno.env.get('AWS_SECRET_ACCESS_KEY')!;
-    const awsBucket = Deno.env.get('AWS_S3_BUCKET')!;
-    const awsRegion = Deno.env.get('AWS_REGION')!;
+    const { data, error } = await supabase.storage
+      .from('documents')
+      .upload(key, new Uint8Array(fileData), {
+        contentType,
+        upsert: false
+      });
 
+    if (error) {
+      throw new Error(`Supabase Storage upload failed: ${error.message}`);
+    }
+
+    return { success: true, key: data.path };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+async function uploadToS3(fileData: ArrayBuffer, key: string, contentType: string, awsAccessKey: string, awsSecretKey: string, awsBucket: string, awsRegion: string) {
+  try {
     const url = `https://${awsBucket}.s3.${awsRegion}.amazonaws.com/${key}`;
     
     // Create AWS signature
@@ -225,10 +252,11 @@ async function uploadToS3(fileData: ArrayBuffer, key: string, contentType: strin
     });
 
     if (!response.ok) {
-      throw new Error(`S3 upload failed: ${response.status} ${response.statusText}`);
+      const responseText = await response.text();
+      throw new Error(`S3 upload failed: ${response.status} ${response.statusText} - ${responseText}`);
     }
 
-    return { success: true };
+    return { success: true, key };
   } catch (error) {
     return { success: false, error: error.message };
   }
