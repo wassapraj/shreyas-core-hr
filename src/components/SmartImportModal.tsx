@@ -88,6 +88,20 @@ export const SmartImportModal = ({ isOpen, onClose, onSuccess }: SmartImportModa
     return { isValid: errors.length === 0, errors };
   };
 
+  // Helper function to convert ArrayBuffer to base64 without stack overflow
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 32768; // 32KB chunks to avoid stack overflow
+    let result = '';
+    
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.slice(i, i + chunkSize);
+      result += String.fromCharCode(...chunk);
+    }
+    
+    return btoa(result);
+  };
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const newFiles: UploadedFile[] = acceptedFiles.map(file => ({
       id: crypto.randomUUID(),
@@ -101,14 +115,18 @@ export const SmartImportModal = ({ isOpen, onClose, onSuccess }: SmartImportModa
     // Process each file
     for (const uploadedFile of newFiles) {
       try {
+        // Check file size limit (10MB)
+        if (uploadedFile.file.size > 10 * 1024 * 1024) {
+          throw new Error('File size exceeds 10MB limit');
+        }
+
         setUploadedFiles(prev => prev.map(f => 
           f.id === uploadedFile.id ? { ...f, status: 'processing', progress: 25 } : f
         ));
 
         // Convert file to base64 for reliable serialization
         const arrayBuffer = await uploadedFile.file.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        const base64 = btoa(String.fromCharCode(...uint8Array));
+        const base64 = arrayBufferToBase64(arrayBuffer);
         
         // Upload to S3 and parse
         const { data, error } = await supabase.functions.invoke('employee-import-process', {
