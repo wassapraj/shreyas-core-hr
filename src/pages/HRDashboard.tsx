@@ -346,38 +346,7 @@ const HRDashboard = () => {
       </div>
 
       {data && (
-        <div className="space-y-6">
-          {/* Events Calendar */}
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                Events Calendar
-              </CardTitle>
-              <CardDescription>
-                Click on a date to view events. Dates with events are highlighted.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CalendarComponent
-                mode="single"
-                selected={selectedDate}
-                onSelect={handleDateSelect}
-                className="rounded-md border shadow pointer-events-auto"
-                modifiers={{
-                  hasEvents: (date) => hasEventsOnDate(date)
-                }}
-                modifiersStyles={{
-                  hasEvents: { 
-                    backgroundColor: 'hsl(var(--primary))', 
-                    color: 'hsl(var(--primary-foreground))',
-                    fontWeight: 'bold'
-                  }
-                }}
-              />
-            </CardContent>
-          </Card>
-
+        <>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Today's Leaves */}
           <Card className="glass-card">
@@ -758,7 +727,38 @@ const HRDashboard = () => {
             </CardContent>
           </Card>
           </div>
-        </div>
+
+          {/* Events Calendar - Full Width */}
+          <Card className="glass-card w-full">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Events Calendar
+              </CardTitle>
+              <CardDescription>
+                Click on a date to view events. Dates with events are highlighted.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDateSelect}
+                className="rounded-md border shadow pointer-events-auto scale-110"
+                modifiers={{
+                  hasEvents: (date) => hasEventsOnDate(date)
+                }}
+                modifiersStyles={{
+                  hasEvents: { 
+                    backgroundColor: 'hsl(var(--primary))', 
+                    color: 'hsl(var(--primary-foreground))',
+                    fontWeight: 'bold'
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
+        </>
       )}
 
       {/* Event Details Modal */}
