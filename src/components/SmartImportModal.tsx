@@ -105,13 +105,18 @@ export const SmartImportModal = ({ isOpen, onClose, onSuccess }: SmartImportModa
           f.id === uploadedFile.id ? { ...f, status: 'processing', progress: 25 } : f
         ));
 
+        // Convert file to base64 for reliable serialization
+        const arrayBuffer = await uploadedFile.file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const base64 = btoa(String.fromCharCode(...uint8Array));
+        
         // Upload to S3 and parse
         const { data, error } = await supabase.functions.invoke('employee-import-process', {
           body: { 
             fileName: uploadedFile.file.name,
             fileType: uploadedFile.file.type,
             fileSize: uploadedFile.file.size,
-            fileData: await uploadedFile.file.arrayBuffer()
+            fileData: base64
           }
         });
 

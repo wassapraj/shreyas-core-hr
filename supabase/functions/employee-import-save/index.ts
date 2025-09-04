@@ -128,18 +128,64 @@ async function processEmployee(supabase: any, employeeData: any): Promise<{ acti
     existingEmployee = data;
   }
 
-  // Prepare employee data
+  // Prepare employee data with comprehensive field mapping
   const employeeRecord = {
+    // Basic Info
     first_name: employeeData.first_name.trim(),
     last_name: employeeData.last_name?.trim() || null,
     email: employeeData.email?.trim() || null,
     phone: employeeData.phone?.trim() || null,
+    alt_phone: employeeData.alt_phone?.trim() || null,
+    whatsapp_number: employeeData.whatsapp_number?.trim() || null,
+    
+    // Personal Info
+    dob: employeeData.dob || null,
+    gender: employeeData.gender?.trim() || null,
+    marital_status: employeeData.marital_status?.trim() || null,
+    blood_group: employeeData.blood_group?.trim() || null,
+    father_name: employeeData.father_name?.trim() || null,
+    mother_name: employeeData.mother_name?.trim() || null,
+    
+    // Emergency Contact
+    emergency_contact_name: employeeData.emergency_contact_name?.trim() || null,
+    emergency_phone: employeeData.emergency_phone?.trim() || null,
+    
+    // Address
+    permanent_address: employeeData.permanent_address?.trim() || null,
+    current_address: employeeData.current_address?.trim() || null,
+    
+    // Professional Info
     department: employeeData.department || null,
     designation: employeeData.designation?.trim() || null,
     location: employeeData.location?.trim() || null,
     doj: employeeData.doj || null,
     status: employeeData.status || 'Active',
-    monthly_ctc: employeeData.monthly_ctc || null
+    qualification: employeeData.qualification?.trim() || null,
+    brand: employeeData.brand?.trim() || null,
+    
+    // Financial Info
+    monthly_ctc: employeeData.monthly_ctc || null,
+    bank_account_number: employeeData.bank_account_number?.trim() || null,
+    bank_account_name: employeeData.bank_account_name?.trim() || null,
+    bank_ifsc: employeeData.bank_ifsc?.trim() || null,
+    bank_branch: employeeData.bank_branch?.trim() || null,
+    upi_id: employeeData.upi_id?.trim() || null,
+    
+    // Documents & IDs
+    aadhaar_number: employeeData.aadhaar_number?.trim() || null,
+    pan_number: employeeData.pan_number?.trim() || null,
+    
+    // Social Media & Personal
+    linkedin: employeeData.linkedin?.trim() || null,
+    facebook: employeeData.facebook?.trim() || null,
+    instagram: employeeData.instagram?.trim() || null,
+    twitter: employeeData.twitter?.trim() || null,
+    other_social: employeeData.other_social?.trim() || null,
+    hobbies_interests: employeeData.hobbies_interests?.trim() || null,
+    languages_known: employeeData.languages_known?.trim() || null,
+    tshirt_size: employeeData.tshirt_size?.trim() || null,
+    personal_vision: employeeData.personal_vision?.trim() || null,
+    open_box_notes: employeeData.open_box_notes?.trim() || null
   };
 
   if (existingEmployee) {

@@ -54,6 +54,20 @@ serve(async (req) => {
 
     const { fileName, fileType, fileSize, fileData } = await req.json();
     
+    // Convert base64 back to ArrayBuffer if needed
+    let processedFileData: ArrayBuffer;
+    if (typeof fileData === 'string') {
+      // Assume it's base64
+      const binaryString = atob(fileData);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      processedFileData = bytes.buffer;
+    } else {
+      processedFileData = fileData;
+    }
+    
     console.log(`Processing file: ${fileName}, type: ${fileType}, size: ${fileSize}`);
 
     // Generate S3 key
@@ -64,7 +78,7 @@ serve(async (req) => {
     const s3Key = `imports/employees/${year}/${month}/${fileId}_${fileName}`;
 
     // Upload to S3
-    const uploadResponse = await uploadToS3(fileData, s3Key, fileType);
+    const uploadResponse = await uploadToS3(processedFileData, s3Key, fileType);
     if (!uploadResponse.success) {
       throw new Error(`S3 upload failed: ${uploadResponse.error}`);
     }
@@ -94,17 +108,17 @@ serve(async (req) => {
     
     try {
       if (fileType === 'text/csv' || fileName.toLowerCase().endsWith('.csv')) {
-        parsedEmployees = await parseCSV(new Uint8Array(fileData));
+        parsedEmployees = await parseCSV(new Uint8Array(processedFileData));
       } else if (fileType.includes('spreadsheet') || fileName.toLowerCase().match(/\.(xlsx?|xls)$/)) {
-        parsedEmployees = await parseExcel(new Uint8Array(fileData));
+        parsedEmployees = await parseExcel(new Uint8Array(processedFileData));
       } else if (fileType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
-        const text = await extractTextFromPDF(new Uint8Array(fileData));
+        const text = await extractTextFromPDF(new Uint8Array(processedFileData));
         parsedEmployees = await extractEmployeeDataWithAI(text, openaiApiKey);
       } else if (fileType.includes('word') || fileName.toLowerCase().endsWith('.docx')) {
-        const text = await extractTextFromDOCX(new Uint8Array(fileData));
+        const text = await extractTextFromDOCX(new Uint8Array(processedFileData));
         parsedEmployees = await extractEmployeeDataWithAI(text, openaiApiKey);
       } else if (fileType.includes('image') || fileName.toLowerCase().match(/\.(jpg|jpeg|png)$/)) {
-        const text = await extractTextFromImage(new Uint8Array(fileData));
+        const text = await extractTextFromImage(new Uint8Array(processedFileData));
         parsedEmployees = await extractEmployeeDataWithAI(text, openaiApiKey);
       } else {
         throw new Error(`Unsupported file type: ${fileType}`);
@@ -263,9 +277,76 @@ async function parseCSV(data: Uint8Array): Promise<any[]> {
 }
 
 async function parseExcel(data: Uint8Array): Promise<any[]> {
-  // For now, return empty array - would need xlsx parser
-  // This is a placeholder for Excel parsing
-  return [];
+  try {
+    // Import XLSX library dynamically
+    const XLSX = await import('https://esm.sh/xlsx@0.18.5');
+    
+    // Read workbook from buffer
+    const workbook = XLSX.read(data, { type: 'array' });
+    
+    // Get first worksheet
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new Error('No worksheet found in Excel file');
+    }
+    
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // Convert to JSON with header row
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+      header: 1,
+      defval: '',
+      raw: false
+    });
+    
+    if (jsonData.length < 2) {
+      return [];
+    }
+    
+    // Get headers and normalize them
+    const headers = (jsonData[0] as string[]).map(h => (h || '').toString().trim());
+    const employees: any[] = [];
+    
+    // Process each row
+    for (let i = 1; i < jsonData.length; i++) {
+      const row = jsonData[i] as string[];
+      if (!row || row.every(cell => !cell || cell.toString().trim() === '')) {
+        continue; // Skip empty rows
+      }
+      
+      const employee: any = {};
+      
+      // Map each column to employee fields
+      headers.forEach((header, index) => {
+        const value = (row[index] || '').toString().trim();
+        if (value) {
+          const mappedField = mapExcelColumnHeader(header);
+          if (mappedField) {
+            employee[mappedField] = value;
+          }
+        }
+      });
+      
+      // Only add if has essential data
+      if (employee.first_name || employee.full_name || employee.email) {
+        // Handle full name split
+        if (employee.full_name && !employee.first_name) {
+          const nameParts = employee.full_name.split(' ').filter(Boolean);
+          employee.first_name = nameParts[0] || '';
+          employee.last_name = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+          delete employee.full_name;
+        }
+        
+        employees.push(normalizeEmployeeData(employee));
+      }
+    }
+    
+    return employees;
+    
+  } catch (error) {
+    console.error('Excel parsing error:', error);
+    throw new Error(`Failed to parse Excel file: ${error.message}`);
+  }
 }
 
 async function extractTextFromPDF(data: Uint8Array): Promise<string> {
@@ -366,10 +447,11 @@ Return only the JSON array, no other text.`
   }
 }
 
-function mapColumnHeader(header: string): string | null {
-  const lower = header.toLowerCase().trim();
+function mapExcelColumnHeader(header: string): string | null {
+  const lower = header.toLowerCase().trim().replace(/[^\w\s]/g, '').replace(/\s+/g, '_');
   
   const mappings: Record<string, string> = {
+    // Basic Info
     'emp_code': 'emp_code',
     'employee_code': 'emp_code',
     'code': 'emp_code',
@@ -383,36 +465,120 @@ function mapColumnHeader(header: string): string | null {
     'name_last': 'last_name',
     'lname': 'last_name',
     'surname': 'last_name',
+    'full_name': 'full_name',
+    'name': 'full_name',
+    'preferred_name': 'preferred_name',
+    'nickname': 'preferred_name',
+    
+    // Personal Info
+    'date_of_birth': 'dob',
+    'dob': 'dob',
+    'birth_date': 'dob',
+    'gender': 'gender',
+    'marital_status': 'marital_status',
+    'blood_group': 'blood_group',
+    
+    // Contact Info
+    'personal_email': 'email',
     'email': 'email',
     'email_address': 'email',
     'mail': 'email',
-    'phone': 'phone',
     'mobile': 'phone',
+    'phone': 'phone',
     'phone_number': 'phone',
     'contact': 'phone',
-    'department': 'department',
-    'dept': 'department',
-    'division': 'department',
+    'alternative_phone_no': 'alt_phone',
+    'alt_phone': 'alt_phone',
+    'whatsapp_no': 'whatsapp_number',
+    'whatsapp': 'whatsapp_number',
+    'whatsapp_number': 'whatsapp_number',
+    
+    // Emergency Contact
+    'emergency_contact_name': 'emergency_contact_name',
+    'emergency_phone': 'emergency_phone',
+    'emergency_contact': 'emergency_phone',
+    
+    // Address
+    'permanent_address_is': 'permanent_address',
+    'permanent_address': 'permanent_address',
+    'current_address_is': 'current_address',
+    'current_address': 'current_address',
+    
+    // Professional Info
+    'qualification': 'qualification',
     'designation': 'designation',
     'role': 'designation',
     'title': 'designation',
     'position': 'designation',
     'job_title': 'designation',
-    'location': 'location',
-    'office': 'location',
-    'city': 'location',
-    'doj': 'doj',
+    'department': 'department',
+    'dept': 'department',
+    'division': 'department',
     'date_of_joining': 'doj',
+    'doj': 'doj',
     'joining_date': 'doj',
     'start_date': 'doj',
-    'status': 'status',
-    'employee_status': 'status',
+    'company': 'brand',
+    'brand': 'brand',
+    
+    // Financial Info
+    'salary': 'monthly_ctc',
     'ctc': 'monthly_ctc',
     'monthly_ctc': 'monthly_ctc',
-    'salary': 'monthly_ctc'
+    'bank_ac_no': 'bank_account_number',
+    'bank_account_number': 'bank_account_number',
+    'account_no': 'bank_account_number',
+    'ifsc_code': 'bank_ifsc',
+    'ifsc': 'bank_ifsc',
+    'branch': 'bank_branch',
+    'bank_branch': 'bank_branch',
+    'upi_id': 'upi_id',
+    'upi': 'upi_id',
+    
+    // Documents & IDs
+    'aadhar_number': 'aadhaar_number',
+    'aadhaar_number': 'aadhaar_number',
+    'aadhaar': 'aadhaar_number',
+    'aadhar': 'aadhaar_number',
+    'pan_number': 'pan_number',
+    'pan': 'pan_number',
+    'aadhar_card': 'aadhaar_file_path',
+    'aadhaar_card': 'aadhaar_file_path',
+    'pan_card': 'pan_file_path',
+    'passport_size_photo': 'passport_photo_file_path',
+    'regular_photo': 'regular_photo_file_path',
+    
+    // Social Media & Personal
+    'linkedin': 'linkedin',
+    'facebook': 'facebook',
+    'instagram': 'instagram',
+    'twitter': 'twitter',
+    'any_other': 'other_social',
+    'hobbies_interests': 'hobbies_interests',
+    'hobbies': 'hobbies_interests',
+    'interests': 'hobbies_interests',
+    'languages_known': 'languages_known',
+    'languages': 'languages_known',
+    't_shirt_shirt_size': 'tshirt_size',
+    'tshirt_size': 'tshirt_size',
+    'shirt_size': 'tshirt_size',
+    'personal_vision_or_career_goal': 'personal_vision',
+    'career_goal': 'personal_vision',
+    'vision': 'personal_vision',
+    'open_box_share_your_thoughts': 'open_box_notes',
+    'thoughts': 'open_box_notes',
+    'open_box': 'open_box_notes',
+    
+    // Status
+    'status': 'status',
+    'employee_status': 'status'
   };
   
   return mappings[lower] || null;
+}
+
+function mapColumnHeader(header: string): string | null {
+  return mapExcelColumnHeader(header);
 }
 
 function normalizeEmployeeData(employee: any): any {
